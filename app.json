@@ -3,6 +3,7 @@
     "name": "3P Tracker",
     "slug": "3ptracker",
     "version": "1.0.0",
+    "scheme": "3ptracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -28,7 +29,8 @@
           "useSQLCipher": true
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-router"
     ]
   }
 }

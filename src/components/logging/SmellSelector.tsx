@@ -1,0 +1,83 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SMELL_OPTIONS } from '@/constants/smell-options';
+import type { SmellLevel } from '@/types/logging';
+
+interface SmellSelectorProps {
+  selected: SmellLevel | null;
+  onSelect: (smell: SmellLevel | null) => void;
+}
+
+export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
+  const handlePress = (value: SmellLevel) => {
+    // Toggle behavior: tap selected pill again to deselect
+    if (selected === value) {
+      onSelect(null);
+    } else {
+      onSelect(value);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {SMELL_OPTIONS.map((option) => {
+        const isSelected = selected === option.value;
+        return (
+          <TouchableOpacity
+            key={option.value}
+            style={[styles.pill, isSelected ? styles.pillSelected : styles.pillUnselected]}
+            onPress={() => handlePress(option.value)}
+            accessibilityLabel={`Smell: ${option.label}`}
+            accessibilityRole="button"
+          >
+            <Text style={styles.emoji}>{option.emoji}</Text>
+            <Text
+              style={[styles.label, isSelected ? styles.labelSelected : styles.labelUnselected]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  pillSelected: {
+    borderWidth: 1,
+    borderColor: '#FF4500',
+    backgroundColor: '#FFF0E6',
+  },
+  pillUnselected: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFF',
+  },
+  emoji: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  label: {
+    fontSize: 14,
+  },
+  labelSelected: {
+    fontWeight: '600',
+    color: '#333',
+  },
+  labelUnselected: {
+    fontWeight: '400',
+    color: '#666',
+  },
+});

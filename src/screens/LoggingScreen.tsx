@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,12 @@ import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
 import { SmellSelector } from '@/components/logging/SmellSelector';
 import { CommentField } from '@/components/logging/CommentField';
 import { CustomTypeDialog } from '@/components/logging/CustomTypeDialog';
+import { Toast } from '@/components/common/Toast';
+import { LocationStatus } from '@/components/logging/LocationStatus';
 import {
   createPoopLog,
   createPissLog,
+  undoLastLog,
   captureLocation,
 } from '@/services/logging-service';
 import {
@@ -55,6 +58,10 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+  const [undoToast, setUndoToast] = useState(false);
 
   // Auto-capture timestamp + location on mount
   useEffect(() => {
@@ -144,6 +151,16 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       }
 
       setSaved(true);
+      setLastSavedId(result.id);
+      setToastMessage('✅ Logged!');
+      setShowToast(true);
+      setSaving(false);
+
+      // Auto-dismiss toast after 3 seconds
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+
       setTimeout(() => {
         onSaved();
       }, 500);
@@ -173,9 +190,37 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
     }
   };
 
+  const handleUndo = useCallback(async () => {
+    if (!lastSavedId) return;
+    const result = await undoLastLog(type, lastSavedId);
+    if (result.success) {
+      setUndoToast(true);
+      setToastMessage('Entry removed');
+      setTimeout(() => {
+        setUndoToast(false);
+      }, 2000);
+    }
+    setLastSavedId(null);
+  }, [lastSavedId, type]);
+
+  const handleDismissToast = useCallback(() => {
+    setShowToast(false);
+  }, []);
+
   if (saved) {
     return (
       <View style={[styles.savedContainer, { paddingTop: insets.top }]}>
+        <Toast
+          visible={showToast}
+          message={toastMessage}
+          onUndo={handleUndo}
+          onDismiss={handleDismissToast}
+        />
+        <Toast
+          visible={undoToast}
+          message={toastMessage}
+          onDismiss={() => setUndoToast(false)}
+        />
         <Text style={styles.savedEmoji}>✅</Text>
         <Text style={styles.savedText}>Entry saved!</Text>
       </View>
@@ -183,10 +228,22 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={styles.content}
-    >
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onUndo={handleUndo}
+        onDismiss={handleDismissToast}
+      />
+      <Toast
+        visible={undoToast}
+        message={toastMessage}
+        onDismiss={() => setUndoToast(false)}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
       {/* Header row */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -221,16 +278,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
 
       {/* Location display */}
       <View style={styles.locationRow}>
-        <Text style={styles.locationIcon}>📍</Text>
-        {locationLoading ? (
-          <Text style={styles.locationText}>Finding location...</Text>
-        ) : location ? (
-          <Text style={styles.locationText}>
-            {location.city || `${location.lat.toFixed(3)}, ${location.lng.toFixed(3)}`}
-          </Text>
-        ) : (
-          <Text style={styles.locationUnavailable}>Location unavailable</Text>
-        )}
+        <LocationStatus location={location} loading={locationLoading} />
       </View>
 
       {/* Type/Color selector section */}
@@ -295,7 +343,8 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         onSave={type === 'poop' ? handleAddCustomType : handleAddCustomColor}
         title={type === 'poop' ? 'Add Custom Poop Type' : 'Add Custom Piss Color'}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -303,6 +352,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: 20,

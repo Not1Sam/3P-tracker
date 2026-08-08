@@ -30,6 +30,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="calendar" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: '#FF4500',
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

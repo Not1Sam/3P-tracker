@@ -74,7 +74,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Data Layer — install deps, extend repos, create history service + date helpers
+- [x] 03-01: Data Layer — install deps, extend repos, create history service + date helpers
 - [ ] 03-02: Calendar & List Views — calendar tab, list tab, entry cards, day detail, swipe-to-delete
 - [ ] 03-03: Entry Detail & Editing — detail screen, edit modal, delete with undo
 
@@ -236,7 +236,7 @@ Phases execute in numeric order with parallel workstreams where noted.
 |-------|----------------|--------|-----------|
 | 1. Foundation & Encrypted Local Data | 4/4 | Complete | 2026-08-07 |
 | 2. Core Poop & Piss Logging | 4/4 | Complete | 2026-08-07 |
-| 3. History & Entry Management | 0/3 | In progress | - |
+| 3. History & Entry Management | 1/3 | In progress | - |
 | 4. Navigation & Thematic UI | 0/3 | Not started | - |
 | 5. Auth & Supabase Backend | 0/5 | Not started | - |
 | 6. Social Foundation | 0/3 | Not started | - |

@@ -1,4 +1,5 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { pissLogs } from '@/db/schema';
@@ -99,4 +100,61 @@ export async function getPissLogById(
 export async function deletePissLog(id: string): Promise<void> {
   const db = await getDatabase();
   await db.delete(pissLogs).where(eq(pissLogs.id, id));
+}
+
+/**
+ * Get piss log entries within a date range, ordered by timestamp ascending.
+ * Supports calendar dot aggregation and list view date grouping.
+ */
+export async function getPissLogsByDateRange(
+  start: Date,
+  end: Date,
+): Promise<PissLogEntry[]> {
+  const db = await getDatabase();
+  const rows = await db
+    .select()
+    .from(pissLogs)
+    .where(and(gte(pissLogs.timestamp, start), lte(pissLogs.timestamp, end)))
+    .orderBy(pissLogs.timestamp);
+
+  return rows.map((row) => ({
+    id: row.id,
+    timestamp: row.timestamp,
+    colorId: row.colorId,
+    smell: row.smell as SmellLevel | null,
+    comment: row.comment,
+    locationLat: row.locationLat,
+    locationLng: row.locationLng,
+    locationCity: row.locationCity,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }));
+}
+
+/**
+ * Get all piss log entries for a specific date.
+ * Convenience wrapper around getPissLogsByDateRange with day boundaries.
+ */
+export async function getPissLogsByDate(
+  date: Date,
+): Promise<PissLogEntry[]> {
+  return getPissLogsByDateRange(startOfDay(date), endOfDay(date));
+}
+
+/**
+ * Update specific fields on a piss log entry.
+ * ColorId, smell, and comment are editable (D-06/D-07: timestamp and location locked).
+ */
+export async function updatePissLog(
+  id: string,
+  fields: { colorId?: number; smell?: SmellLevel; comment?: string },
+): Promise<void> {
+  const db = await getDatabase();
+  await db
+    .update(pissLogs)
+    .set({
+      ...fields,
+      updatedAt: new Date(),
+    })
+    .where(eq(pissLogs.id, id));
 }

@@ -14,15 +14,17 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
 import { ProfileSetup } from '@/components/social/ProfileSetup';
+import { FriendListScreen } from '@/screens/FriendListScreen';
 import { Avatar } from '@/components/social/Avatar';
 
 export function ProfileScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, friendCount } = useProfile();
+  const { profile, loading: profileLoading, friendCount, pendingReceivedCount } = useProfile();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [showFriendList, setShowFriendList] = useState(false);
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
@@ -117,12 +119,21 @@ export function ProfileScreen() {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.surfaceVariant }]}
-          disabled
+          style={[styles.actionButton, { backgroundColor: colors.primary }]}
+          onPress={() => setShowFriendList(true)}
         >
-          <Text style={[styles.actionButtonText, { color: colors.textTertiary }]}>
-            Find Friends (coming soon)
-          </Text>
+          <View style={styles.actionRow}>
+            <Text style={[styles.actionButtonText, { color: colors.textInverse }]}>
+              Find Friends
+            </Text>
+            {pendingReceivedCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                <Text style={styles.badgeText}>
+                  {pendingReceivedCount > 99 ? '99+' : pendingReceivedCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -143,6 +154,15 @@ export function ProfileScreen() {
           <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showFriendList}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowFriendList(false)}
+      >
+        <FriendListScreen />
+      </Modal>
     </View>
   );
 }
@@ -225,9 +245,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
   },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   actionButtonText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  badge: {
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   settings: {
     marginTop: 'auto',

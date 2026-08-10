@@ -15,16 +15,19 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
 import { ProfileSetup } from '@/components/social/ProfileSetup';
 import { FriendListScreen } from '@/screens/FriendListScreen';
+import { QRCodeDisplay } from '@/components/social/QRCodeDisplay';
 import { Avatar } from '@/components/social/Avatar';
+import { generateInviteCode } from '@/services/social-service';
 
 export function ProfileScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, friendCount, pendingReceivedCount } = useProfile();
+  const { profile, loading: profileLoading, friendCount, pendingReceivedCount, inviteCode, refreshInviteCode } = useProfile();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [showFriendList, setShowFriendList] = useState(false);
+  const [showInviteQR, setShowInviteQR] = useState(false);
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
@@ -137,11 +140,20 @@ export function ProfileScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.surfaceVariant }]}
-          disabled
+          style={[styles.actionButton, { backgroundColor: colors.primary }]}
+          onPress={async () => {
+            // If no invite code yet, generate one first
+            if (!inviteCode && user) {
+              const { code, error } = await generateInviteCode(user.id);
+              if (!error && code) {
+                await refreshInviteCode();
+              }
+            }
+            setShowInviteQR(true);
+          }}
         >
-          <Text style={[styles.actionButtonText, { color: colors.textTertiary }]}>
-            Invite Friends (coming soon)
+          <Text style={[styles.actionButtonText, { color: colors.textInverse }]}>
+            Invite Friends
           </Text>
         </TouchableOpacity>
       </View>
@@ -162,6 +174,32 @@ export function ProfileScreen() {
         onRequestClose={() => setShowFriendList(false)}
       >
         <FriendListScreen />
+      </Modal>
+
+      <Modal
+        visible={showInviteQR}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowInviteQR(false)}
+      >
+        {inviteCode ? (
+          <QRCodeDisplay
+            inviteCode={inviteCode}
+            onRegenerate={async () => {
+              if (user) {
+                await generateInviteCode(user.id);
+                await refreshInviteCode();
+              }
+            }}
+          />
+        ) : (
+          <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              Generating invite code...
+            </Text>
+          </View>
+        )}
       </Modal>
     </View>
   );

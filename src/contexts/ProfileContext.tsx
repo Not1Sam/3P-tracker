@@ -14,9 +14,11 @@ interface ProfileContextValue {
   loading: boolean;
   friendCount: number;
   pendingReceivedCount: number;
+  inviteCode: string | null;
   refreshProfile: () => Promise<void>;
   refreshFriendCount: () => Promise<void>;
   refreshPendingCount: () => Promise<void>;
+  refreshInviteCode: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextValue | undefined>(undefined);
@@ -31,6 +33,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const [loading, setLoading] = useState(true);
   const [friendCount, setFriendCount] = useState(0);
   const [pendingReceivedCount, setPendingReceivedCount] = useState(0);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
 
   const refreshProfile = useCallback(async () => {
     if (!isAuthenticated || !user) {
@@ -75,21 +78,34 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
   }, [user]);
 
+  const refreshInviteCode = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { code } = await socialService.getActiveInviteCode(user.id);
+      setInviteCode(code);
+    } catch {
+      // Ignore errors for invite code refresh
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!authLoading) {
       refreshProfile();
       refreshPendingCount();
+      refreshInviteCode();
     }
-  }, [authLoading, refreshProfile, refreshPendingCount]);
+  }, [authLoading, refreshProfile, refreshPendingCount, refreshInviteCode]);
 
   const value: ProfileContextValue = {
     profile,
     loading,
     friendCount,
     pendingReceivedCount,
+    inviteCode,
     refreshProfile,
     refreshFriendCount,
     refreshPendingCount,
+    refreshInviteCode,
   };
 
   return (

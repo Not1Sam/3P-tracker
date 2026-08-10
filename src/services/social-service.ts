@@ -260,3 +260,141 @@ export async function hasPendingRequest(userId: string, otherUserId: string): Pr
     return false;
   }
 }
+
+// ─── Invite Operations ────────────────────────────────────
+
+/**
+ * Generate an invite URL for a given invite code.
+ * Format: https://tracker.app/invite/{code}
+ */
+export function getInviteUrl(code: string): string {
+  return `https://tracker.app/invite/${code}`;
+}
+
+/**
+ * Generate a new invite code for a user.
+ * Deletes any existing unused codes first (regeneration behavior per D-26).
+ */
+export async function generateInviteCode(
+  userId: string,
+): Promise<{ code: string; error: string | null }> {
+  try {
+    // Delete existing unused codes for this user (per D-26: regenerate invalidates old ones)
+    const { error: deleteError } = await supabase
+      .from('invite_codes')
+      .delete()
+      .eq('user_id', userId)
+      .eq('used', false);
+
+    if (deleteError) throw deleteError;
+
+    // Insert new invite code with generated UUID
+    const { data, error: insertError } = await supabase
+      .from('invite_codes')
+      .insert({
+        user_id: userId,
+        code: crypto.randomUUID(),
+        used: false,
+      })
+      .select('code')
+      .single();
+
+    if (insertError) throw insertError;
+
+    return { code: data.code, error: null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to generate invite code';
+    return { code: '', error: message };
+  }
+}
+
+/**
+ * Get the active (unused) invite code for a user.
+ */
+export async function getActiveInviteCode(
+  userId: string,
+): Promise<{ code: string | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('invite_codes')
+      .select('code')
+      .eq('user_id', userId)
+      .eq('used', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return { code: data?.code ?? null, error: null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to get active invite code';
+    return { code: null, error: message };
+  }
+}
+
+/**
+ * Validate an invite code and return the invite details.
+ */
+export async function validateInviteCode(
+  code: string,
+): Promise<{ invite: { id: string; user_id: string } | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('invite_codes')
+      .select('id, user_id')
+      .eq('code', code)
+      .eq('used', false)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return { invite: data, error: null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to validate invite code';
+    return { invite: null, error: message };
+  }
+}
+
+/**
+ * Process an invite code: mark as used and send a friend request to the inviter.
+ * Per D-25: invite codes are single-use.
+ */
+export async function processInvite(
+  code: string,
+  newUserId: string,
+): Promise<{ error: string | null }> {
+  try {
+    // Validate the invite code
+    const { invite, error: validateError } = await validateInviteCode(code);
+    if (validateError) throw new Error(validateError);
+    if (!invite) throw new Error('Invalid or already used invite code');
+
+    // Mark invite as used
+    const { error: updateError } = await supabase
+      .from('invite_codes')
+      .update({ used: true, used_by: newUserId })
+      .eq('id', invite.id);
+
+    if (updateError) throw updateError;
+
+    // Send friend request from new user to inviter
+    const { error: requestError } = await sendFriendRequest(newUserId, invite.user_id);
+    if (requestError) throw new Error(requestError);
+
+    return { error: null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to process invite';
+    return { error: message };
+  }
+}
+
+/**
+ * Regenerate an invite code for a user.
+ * Deletes existing unused codes and generates a new one.
+ */
+export async function regenerateInviteCode(
+  userId: string,
+): Promise<{ code: string; error: string | null }> {
+  return generateInviteCode(userId);
+}

@@ -43,6 +43,7 @@ export interface Database {
           common_piss_color?: number | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       sync_state: {
         Row: {
@@ -67,6 +68,7 @@ export interface Database {
           last_sync_year?: number;
           updated_at?: string;
         };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -82,6 +84,7 @@ export interface Database {
         Update: {
           username?: string;
         };
+        Relationships: [];
       };
       friends: {
         Row: {
@@ -94,7 +97,10 @@ export interface Database {
           friend_id: string;
           created_at?: string;
         };
-        Update: Record<string, never>;
+        Update: {
+          created_at?: string;
+        };
+        Relationships: [];
       };
       friend_requests: {
         Row: {
@@ -114,6 +120,7 @@ export interface Database {
         Update: {
           status?: string;
         };
+        Relationships: [];
       };
       invite_codes: {
         Row: {
@@ -136,6 +143,7 @@ export interface Database {
           used?: boolean;
           used_by?: string | null;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

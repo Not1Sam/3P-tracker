@@ -47,12 +47,16 @@ app-debug.log.*
 # Temporary
 skills-lock.json
 
-# GSD planning (internal workflow)
+# AI/Agent workflow files
 .planning/
-
-# Claude/AI workflow files
 .claude/
 .agents/
+*.skill
+skills/
+
+# GSD (Get Stuff Done) workflow
+.gsd/
+GSD-*.md
 
 # EAS
 .eas/

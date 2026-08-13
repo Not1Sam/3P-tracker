@@ -20,7 +20,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "3P Tracker",
+      "shortName": "3P Tracker",
+      "display": "standalone",
+      "orientation": "portrait",
+      "themeColor": "#8B4513",
+      "backgroundColor": "#FFF8F0"
     },
     "plugins": [
       [
@@ -30,7 +36,9 @@
         }
       ],
       "expo-secure-store",
-      "expo-router"
+      "expo-router",
+      "expo-sharing",
+      "expo-web-browser"
     ]
   }
 }

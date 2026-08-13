@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, count } from 'drizzle-orm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
@@ -139,6 +139,47 @@ export async function getPissLogsByDate(
   date: Date,
 ): Promise<PissLogEntry[]> {
   return getPissLogsByDateRange(startOfDay(date), endOfDay(date));
+}
+
+/**
+ * Get all piss log entries (for backup export)
+ */
+export async function getAllPissLogs(): Promise<any[]> {
+  const db = await getDatabase();
+  return db.select().from(pissLogs);
+}
+
+/**
+ * Insert a piss log entry (for backup import)
+ */
+export async function insertPissLog(row: any): Promise<void> {
+  const db = await getDatabase();
+  await db.insert(pissLogs).values(row).onConflictDoNothing();
+}
+
+/**
+ * Get count of piss logs in a date range (for leaderboard scoring)
+ */
+export async function getPissLogsCount(start: Date, end: Date): Promise<number> {
+  const db = await getDatabase();
+  const [{ result }] = await db
+    .select({ result: count() })
+    .from(pissLogs)
+    .where(and(gte(pissLogs.timestamp, start), lte(pissLogs.timestamp, end)));
+  return result;
+}
+
+/**
+ * Get all piss log timestamps since a cutoff date (for streak calculation)
+ */
+export async function getPissLogsSince(cutoff: Date): Promise<Date[]> {
+  const db = await getDatabase();
+  const rows = await db
+    .select({ timestamp: pissLogs.timestamp })
+    .from(pissLogs)
+    .where(gte(pissLogs.timestamp, cutoff))
+    .orderBy(pissLogs.timestamp);
+  return rows.map(r => r.timestamp);
 }
 
 /**

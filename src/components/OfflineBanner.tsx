@@ -1,57 +1,51 @@
-/**
- * OfflineBanner — subtle fixed-position banner at the top of the screen
- * when network is unavailable. Slides in/out using Animated.timing.
- *
- * Positioned at zIndex: 999 (below Toast at 9999). Non-interactive
- * (pointerEvents: 'none' on container) but the banner itself is tappable
- * for potential future actions.
- *
- * Follows Toast.tsx animation pattern but with faster 200ms timing.
- */
-
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useNetwork } from '@/contexts/NetworkContext';
-import { defaultTheme } from '@/constants/theme';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
-const theme = defaultTheme;
+interface OfflineBannerProps {
+  onRetry?: () => void;
+}
 
-export function OfflineBanner() {
+export function OfflineBanner({ onRetry }: OfflineBannerProps) {
   const { isConnected } = useNetwork();
-  const translateY = useRef(new Animated.Value(-50)).current;
-  const isVisible = useRef(false);
+  const colors = useThemeColors();
+  const translateY = useRef(new Animated.Value(-60)).current;
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!isConnected && !isVisible.current) {
-      isVisible.current = true;
+    if (!isConnected && !visible) {
+      setVisible(true);
       Animated.timing(translateY, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start();
-    } else if (isConnected && isVisible.current) {
-      isVisible.current = false;
+    } else if (isConnected && visible) {
       Animated.timing(translateY, {
-        toValue: -50,
+        toValue: -60,
         duration: 200,
         useNativeDriver: true,
-      }).start();
+      }).start(() => setVisible(false));
     }
-  }, [isConnected, translateY]);
+  }, [isConnected, visible, translateY]);
 
-  // Don't render anything when connected
-  if (isConnected && !isVisible.current) {
+  if (!visible) {
     return null;
   }
 
   return (
     <Animated.View
-      style={[styles.container, { transform: [{ translateY }] }]}
-      pointerEvents="none"
+      style={[styles.container, { backgroundColor: colors.warning, transform: [{ translateY }] }]}
       accessibilityLabel="Offline — data saved locally"
       accessibilityRole="text"
     >
-      <Text style={styles.text}>Offline — data saved locally</Text>
+      <Text style={[styles.text, { color: colors.text }]}>Offline — data saved locally</Text>
+      {onRetry && (
+        <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+          <Text style={[styles.retryText, { color: colors.text }]}>Retry</Text>
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 }
@@ -62,15 +56,26 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.warning,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     zIndex: 999,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
-    color: theme.colors.text,
     fontSize: 12,
-    fontWeight: '400',
+    fontWeight: '500',
+  },
+  retryButton: {
+    marginLeft: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  retryText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

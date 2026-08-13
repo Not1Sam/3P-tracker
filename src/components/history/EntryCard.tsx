@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { getBristolType } from '@/constants/bristol-chart';
 import { getPissColor, getPissColorHex } from '@/constants/color-palette';
 import { formatEntryTime } from '@/utils/date-helpers';
+import { useThemeColors } from '@/contexts/ThemeContext';
+import { AnimatedCard } from '@/components/common/AnimatedCard';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface EntryCardProps {
@@ -12,6 +14,7 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, type, onPress }: EntryCardProps) {
+  const colors = useThemeColors();
   const timeStr = formatEntryTime(entry.timestamp);
 
   const renderIndicator = () => {
@@ -21,7 +24,7 @@ export function EntryCard({ entry, type, onPress }: EntryCardProps) {
       return (
         <View style={styles.indicatorContainer}>
           <Text style={styles.emoji}>💩</Text>
-          <Text style={styles.indicatorLabel}>
+          <Text style={[styles.indicatorLabel, { color: colors.textSecondary }]}>
             {bristolType ? `Type ${poopEntry.typeId}` : 'N/A'}
           </Text>
         </View>
@@ -29,15 +32,15 @@ export function EntryCard({ entry, type, onPress }: EntryCardProps) {
     }
 
     const pissEntry = entry as PissLogEntry;
-    const colorHex = pissEntry.colorId != null ? getPissColorHex(pissEntry.colorId) : '#CCCCCC';
+    const colorHex = pissEntry.colorId != null ? getPissColorHex(pissEntry.colorId) : colors.disabled;
     const colorObj = pissEntry.colorId != null ? getPissColor(pissEntry.colorId) : null;
     return (
       <View style={styles.indicatorContainer}>
         <View
-          style={[styles.colorSwatch, { backgroundColor: colorHex }]}
+          style={[styles.colorSwatch, { backgroundColor: colorHex, borderColor: colors.border }]}
           accessibilityLabel={`Color: ${colorObj?.name ?? 'Unknown'}`}
         />
-        <Text style={styles.indicatorLabel}>
+        <Text style={[styles.indicatorLabel, { color: colors.textSecondary }]}>
           {colorObj?.name ?? 'N/A'}
         </Text>
       </View>
@@ -66,31 +69,33 @@ export function EntryCard({ entry, type, onPress }: EntryCardProps) {
   const accessibilityText = `${typeLabel}, ${time}${city ? `, ${city}` : ''}`;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
+    <AnimatedCard
+      style={[styles.card, { backgroundColor: colors.surface }]}
       onPress={onPress}
-      accessibilityLabel={accessibilityText}
-      accessibilityRole="button"
     >
-      {renderIndicator()}
-      <View style={styles.content}>
-        <Text style={styles.time}>{formatTime()}</Text>
-        {formatLocation() && (
-          <Text style={styles.location}>{formatLocation()}</Text>
-        )}
-        {formatComment() && (
-          <Text style={styles.comment} numberOfLines={1}>
-            {formatComment()}
-          </Text>
-        )}
+      <View
+        accessibilityLabel={accessibilityText}
+        accessibilityRole="button"
+      >
+        {renderIndicator()}
+        <View style={styles.content}>
+          <Text style={[styles.time, { color: colors.text }]}>{formatTime()}</Text>
+          {formatLocation() && (
+            <Text style={[styles.location, { color: colors.textSecondary }]}>{formatLocation()}</Text>
+          )}
+          {formatComment() && (
+            <Text style={[styles.comment, { color: colors.textTertiary }]} numberOfLines={1}>
+              {formatComment()}
+            </Text>
+          )}
+        </View>
       </View>
-    </TouchableOpacity>
+    </AnimatedCard>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
@@ -115,11 +120,9 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#DDD',
   },
   indicatorLabel: {
     fontSize: 11,
-    color: '#666',
     marginTop: 4,
     textAlign: 'center',
   },
@@ -129,17 +132,14 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 2,
   },
   location: {
     fontSize: 13,
-    color: '#666',
     marginBottom: 2,
   },
   comment: {
     fontSize: 13,
-    color: '#999',
     fontStyle: 'italic',
   },
 });

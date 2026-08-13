@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { EntryCard } from './EntryCard';
+import { useThemeColors } from '@/contexts/ThemeContext';
+import { hapticMedium } from '@/utils/haptics';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface SwipeableEntryCardProps {
@@ -17,10 +19,15 @@ export function SwipeableEntryCard({
   onPress,
   onDelete,
 }: SwipeableEntryCardProps) {
+  const colors = useThemeColors();
+
   const renderRightActions = () => (
     <TouchableOpacity
-      style={styles.deleteButton}
-      onPress={() => onDelete(entry.id, type)}
+      style={[styles.deleteButton, { backgroundColor: colors.error }]}
+      onPress={() => {
+        hapticMedium();
+        onDelete(entry.id, type);
+      }}
       accessibilityLabel="Delete entry"
       accessibilityRole="button"
       testID="delete-button"
@@ -43,7 +50,6 @@ export function SwipeableEntryCard({
 const styles = StyleSheet.create({
   deleteButton: {
     width: 80,
-    backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,

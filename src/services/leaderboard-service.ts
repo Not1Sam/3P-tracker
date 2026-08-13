@@ -14,14 +14,14 @@
  * - Server wins for conflict resolution (read-only cache, no local pushes)
  */
 
-import { count, and, gte, lte } from 'drizzle-orm';
 import { startOfMonth, endOfMonth, startOfDay, subDays } from 'date-fns';
 import NetInfo from '@react-native-community/netinfo';
-import { getDatabase } from '@/db';
-import { poopLogs, pissLogs } from '@/db/schema';
+import { getPoopLogsCount, getPoopLogsSince } from '@/db/repositories/poop-repository';
+import { getPissLogsCount, getPissLogsSince } from '@/db/repositories/piss-repository';
 import { supabase } from '@/services/supabase-client';
 import { getCurrentUser } from '@/services/auth-service';
 import { storage } from '@/services/settings';
+import { recordMilestone, checkStreakMilestone } from '@/services/activity-service';
 
 export type LogType = 'poop' | 'piss';
 type BoardType = 'friends' | 'global';
@@ -86,16 +86,10 @@ export function getLastCacheTime(type: LogType, board: BoardType): number | null
  * Returns count of entries of the given type for the current calendar month.
  */
 export async function getPersonalScore(type: LogType): Promise<number> {
-  const db = await getDatabase();
   const now = new Date();
-  const table = type === 'poop' ? poopLogs : pissLogs;
-
-  const [{ result }] = await db
-    .select({ result: count() })
-    .from(table)
-    .where(and(gte(table.timestamp, startOfMonth(now)), lte(table.timestamp, endOfMonth(now))));
-
-  return result;
+  return type === 'poop'
+    ? getPoopLogsCount(startOfMonth(now), endOfMonth(now))
+    : getPissLogsCount(startOfMonth(now), endOfMonth(now));
 }
 
 /**
@@ -103,21 +97,17 @@ export async function getPersonalScore(type: LogType): Promise<number> {
  * Counts consecutive days backwards from today, allowing 1 missing day per month.
  */
 export async function calculateStreak(type: LogType): Promise<number> {
-  const db = await getDatabase();
-  const table = type === 'poop' ? poopLogs : pissLogs;
   const now = startOfDay(new Date());
   const cutoff = subDays(now, 365);
 
   // Get all timestamps going back up to 365 days
-  const entries = await db
-    .select({ timestamp: table.timestamp })
-    .from(table)
-    .where(gte(table.timestamp, cutoff))
-    .orderBy(table.timestamp);
+  const timestamps = type === 'poop'
+    ? await getPoopLogsSince(cutoff)
+    : await getPissLogsSince(cutoff);
 
   // Extract unique day strings (YYYY-MM-DD)
   const daysWithLogs = new Set(
-    entries.map(e => startOfDay(e.timestamp).toISOString().split('T')[0])
+    timestamps.map(t => startOfDay(t).toISOString().split('T')[0])
   );
 
   let streak = 0;
@@ -312,6 +302,22 @@ export async function syncLeaderboards(): Promise<SyncResult> {
     if (friendsPiss.status === 'fulfilled') setCachedLeaderboard('piss', 'friends', friendsPiss.value);
     if (globalPoop.status === 'fulfilled') setCachedLeaderboard('poop', 'global', globalPoop.value);
     if (globalPiss.status === 'fulfilled') setCachedLeaderboard('piss', 'global', globalPiss.value);
+
+    // Check for streak milestones and record them to activity feed
+    try {
+      const [poopStreak, pissStreak] = await Promise.all([
+        calculateStreak('poop'),
+        calculateStreak('piss'),
+      ]);
+
+      const poopMilestone = checkStreakMilestone(poopStreak);
+      const pissMilestone = checkStreakMilestone(pissStreak);
+
+      if (poopMilestone) await recordMilestone('streak_milestone', poopMilestone);
+      if (pissMilestone) await recordMilestone('streak_milestone', pissMilestone);
+    } catch {
+      // Silently ignore milestone check failures
+    }
 
     return { synced: true, timestamp: Date.now() };
   } catch {

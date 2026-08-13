@@ -12,23 +12,38 @@ import { PWAInstallHint } from '@/components/PWAInstallHint';
 import { initializeApp } from '@/services/app-init';
 import { checkForUpdate } from '@/services/update-checker';
 import { syncLeaderboards } from '@/services/leaderboard-service';
+import { checkAutoBackup } from '@/services/backup-service';
 import { SQLiteDatabase } from 'expo-sqlite';
 
 export default function RootLayout() {
-  const [db, setDb] = useState<SQLiteDatabase | null>(null);
-  const [showSplash, setShowSplash] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  const [state, setState] = useState<{
+    db: SQLiteDatabase | null;
+    showSplash: boolean;
+    error: string | null;
+    initialized: boolean;
+  }>({
+    db: null,
+    showSplash: true,
+    error: null,
+    initialized: false,
+  });
 
   const initApp = useCallback(async () => {
     try {
-      setError(null);
       const result = await initializeApp();
-      setDb(result.db);
-      setInitialized(true);
+      setState({
+        db: result.db,
+        showSplash: true,
+        error: null,
+        initialized: true,
+      });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Unknown initialization error';
-      setError(message);
+      setState(prev => ({
+        ...prev,
+        error: message,
+        initialized: true,
+      }));
     }
   }, []);
 
@@ -36,20 +51,17 @@ export default function RootLayout() {
     initApp();
   }, [initApp]);
 
-  // Check for updates and sync leaderboards on app open
+  // Check for updates, sync leaderboards, and auto-backup on app open
   useEffect(() => {
-    if (initialized) {
-      checkForUpdate().catch(() => {
-        // Silently ignore update check failures
-      });
-      syncLeaderboards().catch(() => {
-        // Silently ignore sync failures — will retry on next app open
-      });
+    if (state.initialized) {
+      checkForUpdate().catch(() => {});
+      syncLeaderboards().catch(() => {});
+      checkAutoBackup().catch(() => {});
     }
-  }, [initialized]);
+  }, [state.initialized]);
 
   const handleSplashFinish = useCallback(() => {
-    setShowSplash(false);
+    setState(prev => ({ ...prev, showSplash: false }));
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -57,20 +69,17 @@ export default function RootLayout() {
   }, [initApp]);
 
   const handleReset = useCallback(async () => {
-    // Clear MMKV storage
     const { storage } = await import('@/services/settings');
     storage.clearAll();
-    // Re-initialize
     initApp();
   }, [initApp]);
 
-  // Show splash screen during initialization
-  if (showSplash || !initialized) {
-    if (error) {
+  if (state.showSplash || !state.initialized) {
+    if (state.error) {
       return (
         <ThemeProvider>
           <InitErrorScreen
-            error={error}
+            error={state.error}
             onRetry={handleRetry}
             onReset={handleReset}
           />

@@ -47,6 +47,22 @@ export async function deleteCustomType(id: string): Promise<void> {
 }
 
 /**
+ * Get all custom types (for backup export)
+ */
+export async function getAllCustomTypes(): Promise<any[]> {
+  const db = await getDatabase();
+  return db.select().from(customTypes);
+}
+
+/**
+ * Insert a custom type (for backup import)
+ */
+export async function insertCustomType(row: any): Promise<void> {
+  const db = await getDatabase();
+  await db.insert(customTypes).values(row).onConflictDoNothing();
+}
+
+/**
  * Create a custom piss color
  */
 export async function createCustomColor(

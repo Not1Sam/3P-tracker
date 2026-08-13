@@ -18,6 +18,8 @@ import { FriendListScreen } from '@/screens/FriendListScreen';
 import { QRCodeDisplay } from '@/components/social/QRCodeDisplay';
 import { Avatar } from '@/components/social/Avatar';
 import { generateInviteCode } from '@/services/social-service';
+import { exportBackup } from '@/services/backup-service';
+import { hapticMedium } from '@/utils/haptics';
 
 export function ProfileScreen() {
   const colors = useThemeColors();
@@ -159,6 +161,18 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.settings}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
+          onPress={async () => {
+            hapticMedium();
+            await exportBackup();
+          }}
+        >
+          <Text style={[styles.actionButtonText, { color: colors.text }]}>
+            Export Backup
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.signOutButton, { borderColor: colors.error }]}
           onPress={handleSignOut}

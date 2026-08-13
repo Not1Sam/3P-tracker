@@ -71,6 +71,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="activity"
+        options={{
+          title: 'Activity',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="bell-ring-outline" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: colors.accent,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

@@ -1,12 +1,23 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#8B4513',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        headerStyle: {
+          backgroundColor: colors.surface,
+        },
+        headerTintColor: colors.text,
       }}
     >
       <Tabs.Screen
@@ -16,7 +27,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="emoticon-poop" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#8B4513',
+          tabBarActiveTintColor: colors.poop,
         }}
       />
       <Tabs.Screen
@@ -26,7 +37,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="toilet" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#FFD700',
+          tabBarActiveTintColor: colors.piss,
         }}
       />
       <Tabs.Screen
@@ -36,7 +47,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="calendar" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#FF4500',
+          tabBarActiveTintColor: colors.calendarAccent,
         }}
       />
       <Tabs.Screen
@@ -46,7 +57,17 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="format-list-bulleted" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#8B4513',
+          tabBarActiveTintColor: colors.poop,
+        }}
+      />
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: 'Leaderboard',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="trophy" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: colors.primary,
         }}
       />
       <Tabs.Screen
@@ -56,7 +77,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#666',
+          tabBarActiveTintColor: colors.textSecondary,
         }}
       />
     </Tabs>

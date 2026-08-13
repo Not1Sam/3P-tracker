@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 export default function TabLayout() {
   const colors = useThemeColors();
@@ -18,6 +19,14 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
         },
         headerTintColor: colors.text,
+      }}
+      screenListeners={{
+        state: (e) => {
+          const route = e.data?.state?.routes?.[e.data?.state?.index];
+          if (route) {
+            logger.navTab(route.name);
+          }
+        },
       }}
     >
       <Tabs.Screen

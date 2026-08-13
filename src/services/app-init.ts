@@ -3,6 +3,7 @@ import { getDatabase } from '@/db';
 import { runMigrations } from '@/db/migrate';
 import { storage } from '@/services/settings';
 import * as SQLite from 'expo-sqlite';
+import { logger } from '@/utils/logger';
 
 const DATABASE_NAME = '3ptracker.db';
 
@@ -17,15 +18,15 @@ const DATABASE_NAME = '3ptracker.db';
  * This is the single entry point called on app launch.
  */
 export async function initializeApp(): Promise<{ db: SQLite.SQLiteDatabase }> {
-  console.log('Starting app initialization...');
+  logger.appInit('Starting app initialization...');
 
   // Step 1: Retrieve encryption key
-  console.log('Retrieving encryption key...');
+  logger.appInit('Retrieving encryption key...');
   const encryptionKey = await getEncryptionKey();
-  console.log('Encryption key retrieved.');
+  logger.appInit('Encryption key retrieved.');
 
   // Step 2: Open encrypted database
-  console.log('Opening encrypted database...');
+  logger.appInit('Opening encrypted database...');
   const sqliteDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
   // Set encryption key via PRAGMA (must be first operation)
@@ -33,18 +34,19 @@ export async function initializeApp(): Promise<{ db: SQLite.SQLiteDatabase }> {
 
   // Enable WAL mode for better performance
   await sqliteDb.execAsync('PRAGMA journal_mode = WAL');
-  console.log('Database opened with encryption and WAL mode.');
+  logger.db('Database opened with encryption and WAL mode');
 
   // Step 3: Run migrations
-  console.log('Running migrations...');
+  logger.db('Running migrations...');
   await runMigrations(sqliteDb);
-  console.log('Migrations completed.');
+  logger.db('Migrations completed');
 
   // Step 4: Initialize MMKV settings (already initialized on import)
   // MMKV is a singleton, so just accessing it initializes it
-  console.log('MMKV settings initialized.');
+  logger.appInit('MMKV settings initialized');
 
-  console.log('App initialization complete.');
+  logger.appReady('App initialization complete');
+  await logger.flush();
 
   return { db: sqliteDb };
 }

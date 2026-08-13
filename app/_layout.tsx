@@ -13,6 +13,7 @@ import { initializeApp } from '@/services/app-init';
 import { checkForUpdate } from '@/services/update-checker';
 import { syncLeaderboards } from '@/services/leaderboard-service';
 import { checkAutoBackup } from '@/services/backup-service';
+import { logger } from '@/utils/logger';
 import { SQLiteDatabase } from 'expo-sqlite';
 
 export default function RootLayout() {
@@ -29,6 +30,7 @@ export default function RootLayout() {
   });
 
   const initApp = useCallback(async () => {
+    logger.appInit('RootLayout: initApp called');
     try {
       const result = await initializeApp();
       setState({
@@ -37,8 +39,10 @@ export default function RootLayout() {
         error: null,
         initialized: true,
       });
+      logger.appReady('RootLayout: initApp complete');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Unknown initialization error';
+      logger.appError('RootLayout: initApp failed', { error: message });
       setState(prev => ({
         ...prev,
         error: message,
@@ -48,34 +52,47 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    logger.appInit('RootLayout: useEffect - calling initApp');
     initApp();
   }, [initApp]);
 
   // Check for updates, sync leaderboards, and auto-backup on app open
   useEffect(() => {
     if (state.initialized) {
-      checkForUpdate().catch(() => {});
-      syncLeaderboards().catch(() => {});
-      checkAutoBackup().catch(() => {});
+      logger.appInit('RootLayout: Running post-init tasks');
+      checkForUpdate().catch((e) => {
+        logger.syncError('Update check failed', { error: e });
+      });
+      syncLeaderboards().catch((e) => {
+        logger.syncError('Leaderboard sync failed', { error: e });
+      });
+      checkAutoBackup().catch((e) => {
+        logger.backupError('Auto backup check failed', { error: e });
+      });
     }
   }, [state.initialized]);
 
   const handleSplashFinish = useCallback(() => {
+    logger.nav('Splash finished, showing main app');
     setState(prev => ({ ...prev, showSplash: false }));
   }, []);
 
   const handleRetry = useCallback(() => {
+    logger.appInit('RootLayout: Retry button pressed');
     initApp();
   }, [initApp]);
 
   const handleReset = useCallback(async () => {
+    logger.appInit('RootLayout: Reset button pressed');
     const { storage } = await import('@/services/settings');
     storage.clearAll();
+    logger.appInit('Settings cleared, re-initializing');
     initApp();
   }, [initApp]);
 
   if (state.showSplash || !state.initialized) {
     if (state.error) {
+      logger.appError('RootLayout: Showing error screen', { error: state.error });
       return (
         <ThemeProvider>
           <InitErrorScreen
@@ -93,6 +110,7 @@ export default function RootLayout() {
     );
   }
 
+  logger.nav('RootLayout: Rendering main app');
   return (
     <ThemeProvider>
       <AuthProvider>

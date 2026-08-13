@@ -3,6 +3,9 @@ import { getDatabase } from '@/db';
 import { poopLogs, pissLogs } from '@/db/schema';
 import { canSync, getSyncableTables } from '@/services/privacy-tiers';
 import { getLastSyncTimestamp, setLastSyncTimestamp } from '@/services/settings';
+import { supabase } from '@/services/supabase-client';
+import { getCurrentUser } from '@/services/auth-service';
+import { logger } from '@/utils/logger';
 import { gte } from 'drizzle-orm';
 
 interface MonthlySummary {
@@ -23,51 +26,63 @@ interface MonthlySummary {
  * Sync runs in background when app is open (D-17).
  * Single device only for v1 (D-15) - no conflict resolution needed.
  */
-export async function runMonthlySync(): Promise<void> {
-  console.log('Starting monthly sync...');
+export async function runMonthlySync(): Promise<{ success: boolean; error?: string }> {
+  logger.syncStart('monthly');
 
-  // Run in background to avoid blocking UI
-  await InteractionManager.runAfterInteractions(async () => {
-    try {
-      const db = await getDatabase();
-      const lastSyncTimestamp = getLastSyncTimestamp();
-      const syncDate = new Date(lastSyncTimestamp);
+  // Check if user is authenticated
+  const user = await getCurrentUser();
+  if (!user) {
+    logger.sync('User not authenticated, skipping sync');
+    return { success: true }; // Not an error - sync is optional
+  }
 
-      // Only query Tier 2 tables (architectural guarantee)
-      const syncableTables = getSyncableTables();
-      console.log(`Syncing tables: ${syncableTables.join(', ')}`);
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        const db = await getDatabase();
+        const lastSyncTimestamp = getLastSyncTimestamp();
+        const syncDate = new Date(lastSyncTimestamp);
 
-      // Query poop logs since last sync
-      const poopEntries = await db
-        .select()
-        .from(poopLogs)
-        .where(gte(poopLogs.createdAt, syncDate));
+        // Only query Tier 2 tables (architectural guarantee)
+        const syncableTables = getSyncableTables();
+        logger.sync(`Syncing tables: ${syncableTables.join(', ')}`);
 
-      // Query piss logs since last sync
-      const pissEntries = await db
-        .select()
-        .from(pissLogs)
-        .where(gte(pissLogs.createdAt, syncDate));
+        // Query poop logs since last sync
+        const poopEntries = await db
+          .select()
+          .from(poopLogs)
+          .where(gte(poopLogs.createdAt, syncDate));
 
-      console.log(
-        `Found ${poopEntries.length} poop entries, ${pissEntries.length} piss entries since last sync`
-      );
+        // Query piss logs since last sync
+        const pissEntries = await db
+          .select()
+          .from(pissLogs)
+          .where(gte(pissLogs.createdAt, syncDate));
 
-      // Aggregate into monthly summaries
-      const summaries = aggregateMonthlyData(poopEntries, pissEntries);
+        logger.sync(`Found entries since last sync`, {
+          poop: poopEntries.length,
+          piss: pissEntries.length,
+        });
 
-      // Upload to Supabase (placeholder - actual implementation will use Supabase client)
-      await uploadToSupabase(summaries);
+        // Aggregate into monthly summaries
+        const summaries = aggregateMonthlyData(poopEntries, pissEntries);
 
-      // Update sync timestamp
-      setLastSyncTimestamp(Date.now());
+        // Upload to Supabase
+        await uploadToSupabase(user.id, summaries);
 
-      console.log('Monthly sync completed successfully.');
-    } catch (error) {
-      console.error('Monthly sync failed:', error);
-      // Implement exponential backoff retry
-      await retryWithBackoff(runMonthlySync);
-    }
+        // Update sync timestamp
+        setLastSyncTimestamp(Date.now());
+
+        logger.syncComplete('monthly', { summaries: summaries.length });
+        resolve({ success: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Sync failed';
+        logger.syncError('Monthly sync failed', { error: message });
+        // Implement exponential backoff retry
+        await retryWithBackoff(async () => { await runMonthlySync(); });
+        resolve({ success: false, error: message });
+      }
+    });
   });
 }
 
@@ -153,11 +168,40 @@ function calculateRunningAverage(
 }
 
 /**
- * Upload summaries to Supabase (placeholder)
+ * Upload summaries to Supabase
  */
-async function uploadToSupabase(summaries: MonthlySummary[]): Promise<void> {
-  // TODO: Implement Supabase upload when backend is set up
-  console.log('Upload to Supabase (placeholder):', summaries);
+async function uploadToSupabase(userId: string, summaries: MonthlySummary[]): Promise<void> {
+  if (summaries.length === 0) {
+    logger.sync('No summaries to upload');
+    return;
+  }
+
+  for (const summary of summaries) {
+    const [year, month] = summary.month.split('-').map(Number);
+
+    // Upsert monthly summary (insert or update if exists)
+    const { error } = await supabase
+      .from('monthly_summaries' as any)
+      .upsert(
+        {
+          user_id: userId,
+          month,
+          year,
+          poop_count: summary.poopCount,
+          piss_count: summary.pissCount,
+          avg_bristol_type: summary.avgBristolType,
+          common_piss_color: summary.avgColor,
+        } as any,
+        { onConflict: 'user_id,month,year' }
+      );
+
+    if (error) {
+      logger.syncError('Failed to upload summary', { error: error.message });
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+  }
+
+  logger.sync(`Uploaded ${summaries.length} monthly summaries to Supabase`);
 }
 
 /**
@@ -169,12 +213,12 @@ async function retryWithBackoff(
   maxAttempts: number = 5
 ): Promise<void> {
   if (attempt >= maxAttempts) {
-    console.error('Max retry attempts reached');
+    logger.syncError('Max retry attempts reached');
     return;
   }
 
   const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-  console.log(`Retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+  logger.sync(`Retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
 
   setTimeout(async () => {
     try {

@@ -1,1 +1,58 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Native builds
+android/
+ios/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.swp
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+app-debug.log
+app-debug.log.*
+
+# Temporary
+skills-lock.json
+
+# GSD planning (internal workflow)
 .planning/
+
+# Claude/AI workflow files
+.claude/
+.agents/
+
+# EAS
+.eas/

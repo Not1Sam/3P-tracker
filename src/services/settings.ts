@@ -1,4 +1,5 @@
 import { createMMKV } from 'react-native-mmkv';
+import { type ThemeMode } from '@/constants/theme';
 
 // Singleton MMKV instance for user settings
 export const storage = createMMKV({
@@ -6,11 +7,12 @@ export const storage = createMMKV({
 });
 
 // Theme settings
-export function getTheme(): string {
-  return storage.getString('theme') ?? 'light';
+export function getTheme(): ThemeMode {
+  const stored = storage.getString('theme');
+  return stored === 'clinical' ? 'clinical' : 'playful';
 }
 
-export function setTheme(theme: string): void {
+export function setTheme(theme: ThemeMode): void {
   storage.set('theme', theme);
 }
 
@@ -46,4 +48,27 @@ export function getUserEmail(): string | undefined {
 
 export function setUserEmail(email: string): void {
   storage.set('userEmail', email);
+}
+
+// Period settings (D-39)
+export function getPeriodRemindersEnabled(): boolean {
+  return storage.getString('periodRemindersEnabled') === 'true';
+}
+
+export function setPeriodRemindersEnabled(enabled: boolean): void {
+  storage.set('periodRemindersEnabled', enabled ? 'true' : 'false');
+}
+
+export function getPeriodReminderTime(): { hour: number; minute: number } {
+  const hour = storage.getNumber('periodReminderHour');
+  const minute = storage.getNumber('periodReminderMinute');
+  return {
+    hour: hour !== undefined ? hour : 9, // Default 9 AM
+    minute: minute !== undefined ? minute : 0,
+  };
+}
+
+export function setPeriodReminderTime(hour: number, minute: number): void {
+  storage.set('periodReminderHour', hour);
+  storage.set('periodReminderMinute', minute);
 }

@@ -19,8 +19,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Navigation & Thematic UI** - Tab navigation, brown/yellow/pink theme, core UI components, playful vibe (completed 2026-08-08)
 - [x] **Phase 5: Auth & Supabase Backend** - Self-hosted Supabase, email/Google/Apple sign-in, biometric lock, monthly sync (completed 2026-08-08)
 - [ ] **Phase 6: Social Foundation** - User profiles, username search, friend requests, QR code/invite links
-- [ ] **Phase 7: Leaderboards & Streaks** - Separate pee/poop leaderboards, streak tracking, podium UI, friends vs global toggle
-- [ ] **Phase 8: Period Tracking** - Cycle prediction, symptoms, mood, flow level, reminders, education, local-only enforcement
+- [x] **Phase 7: Leaderboards & Streaks** - Separate pee/poop leaderboards, streak tracking, podium UI, friends vs global toggle (completed 2026-08-13)
+- [x] **Phase 8: Period Tracking** - Cycle prediction, symptoms, mood, flow level, reminders, education, local-only enforcement (completed 2026-08-13)
 - [ ] **Phase 9: Platform & Distribution** - Android APK builds, PWA for iOS, offline logging, leaderboard sync
 - [ ] **Phase 10: Polish & Animations** - Reanimated animations, activity feed, data backup/restore, edge cases
 
@@ -153,15 +153,16 @@ Plans:
 
 Plans:
 
-- [ ] 06-01-PLAN.md — Database schema + profile system (avatar, username, profile screen)
-- [ ] 06-02-PLAN.md — Friend system (search, requests, accept/reject, remove)
-- [ ] 06-03-PLAN.md — Invite system (QR codes, share links, deep link handling)
+- [x] 06-01-PLAN.md — Database schema + profile system (avatar, username, profile screen)
+- [x] 06-02-PLAN.md — Friend system (search, requests, accept/reject, remove)
+- [x] 06-03-PLAN.md — Invite system (QR codes, share links, deep link handling)
 
 ### Phase 7: Leaderboards & Streaks
 
 **Goal**: Users can compete with friends and global community on separate pee/poop leaderboards with streak tracking
 **Depends on**: Phase 6
-**Requirements**: LEAD-01, LEAD-02, LEAD-03, LEAD-04, LEAD-05, LEAD-06, LEAD-07, LEAD-08, LEAD-09, LEAD-10, LEAD-11
+**Requirements**: LEAD-01, LEAD-02, LEAD-03, LEAD-04, LEAD-05, LEAD-06, LEAD-07, LEAD-08, LEAD-09, LEAD-10
+**Deferred**: LEAD-11 (activity feed) → Phase 10 (Polish)
 **Research flags**: Leaderboard anti-cheat — needs research on server-side scoring patterns, anomaly detection, rate limiting
 **Success Criteria** (what must be TRUE):
 
@@ -171,20 +172,18 @@ Plans:
   4. User can toggle between friends and global leaderboard views
   5. Podium UI shows top 3 with medals (bronze/silver/gold), scrollable list for ranks 4+
 
-**Plans**: TBD
+**Plans**: 2/2 plans complete
 
 Plans:
 
-- [ ] 07-01: Leaderboard backend — server-side scoring, anti-cheat validation, rate limiting, anomaly detection
-- [ ] 07-02: Streak system — consecutive day tracking, grace days, streak calculation server-side
-- [ ] 07-03: Leaderboard UI — podium component, scrollable ranked list, friends vs global toggle
-- [ ] 07-04: Activity feed — friend milestones, streak celebrations, real-time updates via Supabase Realtime
+- [x] 07-01-PLAN.md — Leaderboard & streak services (TDD): score calculation, streak algorithm, Supabase data fetching
+- [x] 07-02-PLAN.md — Leaderboard UI & tab integration: podium, scrollable list, friends/global toggle, tab navigation
 
 ### Phase 8: Period Tracking
 
 **Goal**: Users can track their menstrual cycle with predictions, symptoms, and education — all data stays on-device
 **Depends on**: Phase 1 (architecturally independent — period data never syncs)
-**Requirements**: (Period tracking — mapped to v2 in current requirements, but architecture requires foundation in v1)
+**Requirements**: PRD-01, PRD-02, PRD-03, PRD-04, PRD-05, PRD-06, PRD-07
 **Research flags**: Cycle prediction algorithm — needs research on evidence-based prediction methods (rhythm method, calendar-based, ML options)
 **Success Criteria** (what must be TRUE):
 
@@ -194,14 +193,13 @@ Plans:
   4. Cycle statistics and insights display on-device
   5. Period data NEVER leaves the device — verified with network traffic analysis
 
-**Plans**: TBD
+**Plans**: 3/3 plans complete
 
 Plans:
 
-- [ ] 08-01: Period logging — flow level selector, symptom checklist, mood tracker, comments
-- [ ] 08-02: Cycle prediction — on-device algorithm, cycle length calculation, next period estimate
-- [ ] 08-03: Period reminders — local notifications, reminder scheduling, notification preferences
-- [ ] 08-04: Period insights — cycle statistics, trends, educational content, local-only enforcement verification
+- [x] 08-01-PLAN.md — Data layer: period types, constants, repository, MMKV settings
+- [x] 08-02-PLAN.md — Services: cycle prediction, period orchestrator, notification scheduling, theme + tab
+- [x] 08-03-PLAN.md — UI: period components, education cards, period tab screen
 
 ### Phase 9: Platform & Distribution
 
@@ -215,13 +213,13 @@ Plans:
   3. iOS PWA works via Safari "Add to Home Screen" with standalone display
   4. App syncs leaderboard data when online, works fully offline for local logging
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 09-01: Android APK — EAS Build configuration, APK signing, distribution website
-- [ ] 09-02: iOS PWA — Expo web export, service worker, manifest, offline caching
-- [ ] 09-03: Offline/sync behavior — network state detection, sync queue, conflict resolution
+- [ ] 09-01-PLAN.md — EAS Build config for Android APK + in-app update checking
+- [ ] 09-02-PLAN.md — PWA manifest, Workbox service worker, iOS install hint
+- [ ] 09-03-PLAN.md — Network state detection, offline banner, leaderboard caching
 
 ### Phase 10: Polish & Animations
 
@@ -284,8 +282,8 @@ Phases execute in numeric order with parallel workstreams where noted.
 | 4. Navigation & Thematic UI | 0/3 | Not started | - |
 | 5. Auth & Supabase Backend | 0/5 | Not started | - |
 | 6. Social Foundation | 0/3 | Not started | - |
-| 7. Leaderboards & Streaks | 0/4 | Not started | - |
-| 8. Period Tracking | 0/4 | Not started | - |
+| 7. Leaderboards & Streaks | 2/2 | Complete   | 2026-08-13 |
+| 8. Period Tracking | 3/3 | Complete   | 2026-08-13 |
 | 9. Platform & Distribution | 0/3 | Not started | - |
 | 10. Polish & Animations | 0/3 | Not started | - |
 
@@ -328,7 +326,14 @@ Phases execute in numeric order with parallel workstreams where noted.
 | LEAD-08 | Phase 7 | Pending |
 | LEAD-09 | Phase 7 | Pending |
 | LEAD-10 | Phase 7 | Pending |
-| LEAD-11 | Phase 7 | Pending |
+| LEAD-11 | Phase 10 | Deferred |
+| PRD-01 | Phase 8 | Pending |
+| PRD-02 | Phase 8 | Pending |
+| PRD-03 | Phase 8 | Pending |
+| PRD-04 | Phase 8 | Pending |
+| PRD-05 | Phase 8 | Pending |
+| PRD-06 | Phase 8 | Pending |
+| PRD-07 | Phase 8 | Pending |
 | PLAT-01 | Phase 9 | Pending |
 | PLAT-02 | Phase 9 | Pending |
 | PLAT-03 | Phase 9 | Pending |

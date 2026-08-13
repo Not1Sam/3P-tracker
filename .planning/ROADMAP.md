@@ -18,11 +18,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: History & Entry Management** - Calendar/list views, edit/delete entries, entry detail screens (completed 2026-08-08)
 - [x] **Phase 4: Navigation & Thematic UI** - Tab navigation, brown/yellow/pink theme, core UI components, playful vibe (completed 2026-08-08)
 - [x] **Phase 5: Auth & Supabase Backend** - Self-hosted Supabase, email/Google/Apple sign-in, biometric lock, monthly sync (completed 2026-08-08)
-- [ ] **Phase 6: Social Foundation** - User profiles, username search, friend requests, QR code/invite links
+- [x] **Phase 6: Social Foundation** - User profiles, username search, friend requests, QR code/invite links
 - [x] **Phase 7: Leaderboards & Streaks** - Separate pee/poop leaderboards, streak tracking, podium UI, friends vs global toggle (completed 2026-08-13)
 - [x] **Phase 8: Period Tracking** - Cycle prediction, symptoms, mood, flow level, reminders, education, local-only enforcement (completed 2026-08-13)
-- [ ] **Phase 9: Platform & Distribution** - Android APK builds, PWA for iOS, offline logging, leaderboard sync
-- [ ] **Phase 10: Polish & Animations** - Reanimated animations, activity feed, data backup/restore, edge cases
+- [x] **Phase 9: Platform & Distribution** - Android APK builds, PWA for iOS, offline logging, leaderboard sync (completed 2026-08-13)
+- [x] **Phase 10: Polish & Animations** - Reanimated animations, activity feed, data backup/restore, edge cases
 
 ## Phase Details
 
@@ -233,13 +233,13 @@ Plans:
   3. Edge cases handled: empty states, error states, loading states, network errors
   4. App feels complete and ready for daily use
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 10-01: Animations — Reanimated transitions, tab animations, entry micro-interactions
-- [ ] 10-02: Data backup — encrypted export to user's cloud storage, restore mechanism
-- [ ] 10-03: Edge cases — empty states, error handling, loading indicators, offline messaging
+- [x] 10-01: Animations — Reanimated transitions, tab animations, entry micro-interactions
+- [x] 10-02: Data backup — encrypted export to user's cloud storage, restore mechanism
+- [x] 10-03: Edge cases — empty states, error handling, loading indicators, offline messaging
 
 ## Parallel Workstreams
 
@@ -279,13 +279,13 @@ Phases execute in numeric order with parallel workstreams where noted.
 | 1. Foundation & Encrypted Local Data | 4/4 | Complete | 2026-08-07 |
 | 2. Core Poop & Piss Logging | 4/4 | Complete | 2026-08-07 |
 | 3. History & Entry Management | 3/3 | Complete   | 2026-08-08 |
-| 4. Navigation & Thematic UI | 0/3 | Not started | - |
-| 5. Auth & Supabase Backend | 0/5 | Not started | - |
-| 6. Social Foundation | 0/3 | Not started | - |
+| 4. Navigation & Thematic UI | 3/3 | Complete   | 2026-08-08 |
+| 5. Auth & Supabase Backend | 5/5 | Complete   | 2026-08-08 |
+| 6. Social Foundation | 3/3 | Complete   | 2026-08-08 |
 | 7. Leaderboards & Streaks | 2/2 | Complete   | 2026-08-13 |
 | 8. Period Tracking | 3/3 | Complete   | 2026-08-13 |
-| 9. Platform & Distribution | 0/3 | Not started | - |
-| 10. Polish & Animations | 0/3 | Not started | - |
+| 9. Platform & Distribution | 3/3 | Complete   | 2026-08-13 |
+| 10. Polish & Animations | 3/3 | Complete   | 2026-08-13 |
 
 ## Coverage
 
@@ -326,7 +326,7 @@ Phases execute in numeric order with parallel workstreams where noted.
 | LEAD-08 | Phase 7 | Pending |
 | LEAD-09 | Phase 7 | Pending |
 | LEAD-10 | Phase 7 | Pending |
-| LEAD-11 | Phase 10 | Deferred |
+| LEAD-11 | Phase 10 | Complete |
 | PRD-01 | Phase 8 | Pending |
 | PRD-02 | Phase 8 | Pending |
 | PRD-03 | Phase 8 | Pending |
@@ -334,11 +334,11 @@ Phases execute in numeric order with parallel workstreams where noted.
 | PRD-05 | Phase 8 | Pending |
 | PRD-06 | Phase 8 | Pending |
 | PRD-07 | Phase 8 | Pending |
-| PLAT-01 | Phase 9 | Pending |
-| PLAT-02 | Phase 9 | Pending |
-| PLAT-03 | Phase 9 | Pending |
+| PLAT-01 | Phase 9 | Complete |
+| PLAT-02 | Phase 9 | Complete |
+| PLAT-03 | Phase 9 | Complete |
 | PLAT-04 | Phase 1 | Complete |
-| PLAT-05 | Phase 9 | Pending |
+| PLAT-05 | Phase 9 | Complete |
 
 **Coverage:**
 

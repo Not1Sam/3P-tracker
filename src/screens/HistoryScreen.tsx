@@ -1,16 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, SectionList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, SectionList, StyleSheet } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { getEntriesPaginated, deleteEntryWithUndo } from '@/services/history-service';
 import { groupEntriesByDate } from '@/utils/date-helpers';
 import { SwipeableEntryCard } from '@/components/history/SwipeableEntryCard';
 import { DateSectionHeader } from '@/components/history/DateSectionHeader';
 import { Toast } from '@/components/common/Toast';
+import { SkeletonList } from '@/components/common/Skeleton';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 import type { DateSection } from '@/utils/date-helpers';
 
 export function HistoryScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const [sections, setSections] = useState<DateSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastVisible, setToastVisible] = useState(false);
@@ -80,12 +83,18 @@ export function HistoryScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {loading ? (
-        <ActivityIndicator size="large" style={styles.loader} />
+        <View style={styles.skeletonContainer}>
+          <SkeletonList count={6} />
+        </View>
       ) : sections.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No entries yet. Start logging!</Text>
+          <Text style={styles.emptyEmoji}>📝</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No entries yet!</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            Start logging your bathroom trips
+          </Text>
         </View>
       ) : (
         <SectionList
@@ -114,21 +123,28 @@ export function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  skeletonContainer: {
+    padding: 16,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
   },
   listContent: {
     padding: 16,

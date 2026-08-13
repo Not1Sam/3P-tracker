@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { BRISTOL_TYPES } from '@/constants/bristol-chart';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { CustomType } from '@/types/logging';
 
 const BRISTOL_EMOJIS: Record<number, string> = {
@@ -32,6 +33,8 @@ export function BristolTypeSelector({
   onAddCustom,
   customTypes = [],
 }: BristolTypeSelectorProps) {
+  const colors = useThemeColors();
+
   const handleLongPress = (typeId: number) => {
     const type = BRISTOL_TYPES.find((t) => t.id === typeId);
     if (type) {
@@ -51,7 +54,9 @@ export function BristolTypeSelector({
             key={type.id}
             style={[
               styles.cell,
-              isSelected ? styles.cellSelected : styles.cellUnselected,
+              isSelected
+                ? [styles.cellSelected, { borderColor: colors.primary, backgroundColor: colors.primaryLight + '20' }]
+                : [styles.cellUnselected, { borderColor: colors.border, backgroundColor: colors.surface }],
             ]}
             onPress={() => onSelect(type.id)}
             onLongPress={() => handleLongPress(type.id)}
@@ -59,8 +64,8 @@ export function BristolTypeSelector({
             accessibilityRole="button"
           >
             <Text style={styles.emoji}>{BRISTOL_EMOJIS[type.id]}</Text>
-            <Text style={styles.typeNumber}>Type {type.id}</Text>
-            <Text style={styles.typeName} numberOfLines={1}>
+            <Text style={[styles.typeNumber, { color: colors.text }]}>Type {type.id}</Text>
+            <Text style={[styles.typeName, { color: colors.textSecondary }]} numberOfLines={1}>
               {type.name}
             </Text>
           </TouchableOpacity>
@@ -68,19 +73,18 @@ export function BristolTypeSelector({
       })}
 
       {customTypes.map((custom) => {
-        const isSelected = false; // Custom types use string IDs, so they won't match number selection
         return (
           <TouchableOpacity
             key={custom.id}
-            style={[styles.cell, styles.cellUnselected]}
+            style={[styles.cell, styles.cellUnselected, { borderColor: colors.border, backgroundColor: colors.surface }]}
             onPress={() => {}}
             accessibilityLabel={`Custom type: ${custom.name}`}
             accessibilityRole="button"
           >
-            <View style={styles.customBadge}>
-              <Text style={styles.customBadgeText}>Custom</Text>
+            <View style={[styles.customBadge, { backgroundColor: colors.surfaceVariant }]}>
+              <Text style={[styles.customBadgeText, { color: colors.textSecondary }]}>Custom</Text>
             </View>
-            <Text style={styles.typeName} numberOfLines={1}>
+            <Text style={[styles.typeName, { color: colors.textSecondary }]} numberOfLines={1}>
               {custom.name}
             </Text>
           </TouchableOpacity>
@@ -88,13 +92,13 @@ export function BristolTypeSelector({
       })}
 
       <TouchableOpacity
-        style={[styles.cell, styles.addCell]}
+        style={[styles.cell, styles.addCell, { borderColor: colors.border, backgroundColor: colors.surfaceVariant }]}
         onPress={onAddCustom}
         accessibilityLabel="Add Custom Type"
         accessibilityRole="button"
       >
-        <Text style={styles.addIcon}>+</Text>
-        <Text style={styles.addLabel}>Add Custom</Text>
+        <Text style={[styles.addIcon, { color: colors.textTertiary }]}>+</Text>
+        <Text style={[styles.addLabel, { color: colors.textTertiary }]}>Add Custom</Text>
       </TouchableOpacity>
     </View>
   );
@@ -114,19 +118,12 @@ const styles = StyleSheet.create({
   },
   cellSelected: {
     borderWidth: 3,
-    borderColor: '#FF4500',
-    backgroundColor: '#FFF0E6',
   },
   cellUnselected: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFF',
   },
   addCell: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderStyle: 'dashed',
-    backgroundColor: '#FAFAFA',
   },
   emoji: {
     fontSize: 32,
@@ -135,16 +132,13 @@ const styles = StyleSheet.create({
   typeNumber: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
   },
   typeName: {
     fontSize: 12,
-    color: '#666',
     marginTop: 4,
     textAlign: 'center',
   },
   customBadge: {
-    backgroundColor: '#E0E0E0',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -152,16 +146,13 @@ const styles = StyleSheet.create({
   },
   customBadgeText: {
     fontSize: 10,
-    color: '#666',
     fontWeight: '600',
   },
   addIcon: {
     fontSize: 28,
-    color: '#999',
     marginBottom: 8,
   },
   addLabel: {
     fontSize: 12,
-    color: '#999',
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -11,12 +12,15 @@ interface FloatingActionButtonProps {
 export function FloatingActionButton({
   onPress,
   icon = '💩',
-  color = '#8B4513',
+  color,
   style,
 }: FloatingActionButtonProps) {
+  const colors = useThemeColors();
+  const fabColor = color ?? colors.primary;
+
   return (
     <TouchableOpacity
-      style={[styles.fab, { backgroundColor: color }, style]}
+      style={[styles.fab, { backgroundColor: fabColor }, style]}
       onPress={onPress}
       activeOpacity={0.8}
       accessibilityLabel="Log entry"

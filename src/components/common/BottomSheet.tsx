@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   StyleSheet,
 } from 'react-native';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -21,6 +22,8 @@ export function BottomSheet({
   children,
   title,
 }: BottomSheetProps) {
+  const colors = useThemeColors();
+
   return (
     <Modal
       visible={visible}
@@ -32,15 +35,15 @@ export function BottomSheet({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.backdrop}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheet}>
-              {title && <Text style={styles.title}>{title}</Text>}
+            <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+              {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
               <TouchableOpacity
-                style={styles.closeButton}
+                style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
                 onPress={onClose}
                 accessibilityLabel="Close"
                 accessibilityRole="button"
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Text style={[styles.closeIcon, { color: colors.textSecondary }]}>✕</Text>
               </TouchableOpacity>
               {children}
             </View>
@@ -58,7 +61,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -77,13 +79,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeIcon: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#666',
   },
 });

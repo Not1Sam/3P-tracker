@@ -14,6 +14,7 @@ import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
 import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
 import { SmellSelector } from '@/components/logging/SmellSelector';
 import { CommentField } from '@/components/logging/CommentField';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { PoopLogEntry, PissLogEntry, LogType, SmellLevel } from '@/types/logging';
 
 interface EditEntryModalProps {
@@ -31,6 +32,7 @@ export function EditEntryModal({
   onClose,
   onSaved,
 }: EditEntryModalProps) {
+  const colors = useThemeColors();
   // Per Pitfall 4: Initialize state from entry props
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(
     type === 'poop' ? (entry as PoopLogEntry).typeId ?? null : null,
@@ -83,17 +85,17 @@ export function EditEntryModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Edit Entry</Text>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Entry</Text>
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
           </TouchableOpacity>
         </View>
 
@@ -105,7 +107,7 @@ export function EditEntryModal({
           {/* Editable: Type/Color */}
           {type === 'poop' ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Bristol Type</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Bristol Type</Text>
               <BristolTypeSelector
                 selectedTypeId={selectedTypeId}
                 onSelect={setSelectedTypeId}
@@ -114,7 +116,7 @@ export function EditEntryModal({
             </View>
           ) : (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Color</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Color</Text>
               <ColorSwatchSelector
                 selectedColorId={selectedColorId}
                 onSelect={setSelectedColorId}
@@ -126,14 +128,14 @@ export function EditEntryModal({
           {/* Editable: Smell (piss only) */}
           {type === 'piss' && (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Smell</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Smell</Text>
               <SmellSelector selected={smell} onSelect={setSmell} />
             </View>
           )}
 
           {/* Editable: Comment */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Comment</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Comment</Text>
             <CommentField
               value={comment}
               onChangeText={setComment}
@@ -147,30 +149,30 @@ export function EditEntryModal({
           </View>
 
           {/* Read-only: Timestamp (D-06: locked) */}
-          <View style={styles.readOnlySection}>
-            <Text style={styles.sectionLabel}>Timestamp</Text>
-            <Text style={styles.readOnlyText}>
+          <View style={[styles.readOnlySection, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Timestamp</Text>
+            <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>
               🕐 {formatEntryTime(entry.timestamp)}
             </Text>
-            <Text style={styles.readOnlyHint}>Locked — cannot be edited</Text>
+            <Text style={[styles.readOnlyHint, { color: colors.textTertiary }]}>Locked — cannot be edited</Text>
           </View>
 
           {/* Read-only: Location (D-06: locked) */}
-          <View style={styles.readOnlySection}>
-            <Text style={styles.sectionLabel}>Location</Text>
+          <View style={[styles.readOnlySection, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Location</Text>
             {entry.locationCity ? (
-              <Text style={styles.readOnlyText}>📍 {entry.locationCity}</Text>
+              <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>📍 {entry.locationCity}</Text>
             ) : (
-              <Text style={styles.readOnlyText}>No location recorded</Text>
+              <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>No location recorded</Text>
             )}
-            <Text style={styles.readOnlyHint}>Locked — cannot be edited</Text>
+            <Text style={[styles.readOnlyHint, { color: colors.textTertiary }]}>Locked — cannot be edited</Text>
           </View>
         </ScrollView>
 
         {/* Save button */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { borderTopColor: colors.border }]}>
           <TouchableOpacity
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            style={[styles.saveButton, { backgroundColor: saving ? colors.disabled : colors.primary }]}
             onPress={handleSave}
             disabled={saving}
             accessibilityLabel="Save changes"
@@ -191,7 +193,6 @@ export function EditEntryModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
   header: {
     flexDirection: 'row',
@@ -200,24 +201,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#333',
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeButtonText: {
     fontSize: 14,
-    color: '#666',
   },
   scrollView: {
     flex: 1,
@@ -232,7 +229,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -240,34 +236,25 @@ const styles = StyleSheet.create({
   readOnlySection: {
     marginBottom: 24,
     padding: 12,
-    backgroundColor: '#F8F8F8',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E8E8E8',
   },
   readOnlyText: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   readOnlyHint: {
     fontSize: 12,
-    color: '#AAA',
     fontStyle: 'italic',
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#B0C4DE',
   },
   saveButtonText: {
     color: '#FFF',

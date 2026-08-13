@@ -5,18 +5,20 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getEntriesForDate, deleteEntryWithUndo } from '@/services/history-service';
 import { formatDateHeader } from '@/utils/date-helpers';
 import { EntryCard } from '@/components/history/EntryCard';
 import { Toast } from '@/components/common/Toast';
+import { SkeletonList } from '@/components/common/Skeleton';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 export default function DayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const router = useRouter();
+  const colors = useThemeColors();
   const [poopEntries, setPoopEntries] = useState<PoopLogEntry[]>([]);
   const [pissEntries, setPissEntries] = useState<PissLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,26 +76,28 @@ export default function DayDetailScreen() {
   const formattedDate = formatDateHeader(dateObj);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.dateTitle}>{formattedDate}</Text>
+        <Text style={[styles.dateTitle, { color: colors.text }]}>{formattedDate}</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" style={styles.loader} />
+        <View style={styles.skeletonContainer}>
+          <SkeletonList count={4} />
+        </View>
       ) : (
         <ScrollView style={styles.content}>
           {poopEntries.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionHeader}>💩 Poop</Text>
+              <Text style={[styles.sectionHeader, { color: colors.text }]}>💩 Poop</Text>
               {poopEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
@@ -107,7 +111,7 @@ export default function DayDetailScreen() {
 
           {pissEntries.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionHeader}>🚽 Piss</Text>
+              <Text style={[styles.sectionHeader, { color: colors.text }]}>🚽 Piss</Text>
               {pissEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
@@ -121,7 +125,8 @@ export default function DayDetailScreen() {
 
           {poopEntries.length === 0 && pissEntries.length === 0 && (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No entries for this day</Text>
+              <Text style={styles.emptyEmoji}>📝</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No entries for this day</Text>
             </View>
           )}
         </ScrollView>
@@ -140,7 +145,6 @@ export default function DayDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
   header: {
     flexDirection: 'row',
@@ -149,24 +153,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   backButton: {
     marginRight: 16,
   },
   backText: {
     fontSize: 16,
-    color: '#FF4500',
   },
   dateTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
   },
-  loader: {
+  skeletonContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 16,
   },
   content: {
     flex: 1,
@@ -178,7 +178,6 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 12,
   },
   emptyState: {
@@ -187,8 +186,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 80,
   },
-  emptyText: {
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyTitle: {
     fontSize: 16,
-    color: '#999',
   },
 });

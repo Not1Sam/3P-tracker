@@ -16,6 +16,7 @@ import { getPissColor } from '@/constants/color-palette';
 import { SMELL_OPTIONS } from '@/constants/smell-options';
 import { EditEntryModal } from '@/screens/EditEntryModal';
 import { Toast } from '@/components/common/Toast';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface EntryDetailScreenProps {
@@ -26,6 +27,7 @@ interface EntryDetailScreenProps {
 export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const colors = useThemeColors();
   const [entry, setEntry] = useState<PoopLogEntry | PissLogEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -93,15 +95,15 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
       const bristolType = poopEntry.typeId != null ? getBristolType(poopEntry.typeId) : null;
       return (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Type</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Type</Text>
           {bristolType ? (
             <View style={styles.detailRow}>
-              <Text style={styles.detailValue}>{bristolType.name}</Text>
-              <Text style={styles.detailSubtext}>{bristolType.description}</Text>
-              <Text style={styles.detailSubtext}>{bristolType.clinicalReference}</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>{bristolType.name}</Text>
+              <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.description}</Text>
+              <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.clinicalReference}</Text>
             </View>
           ) : (
-            <Text style={styles.placeholderText}>No type selected</Text>
+            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No type selected</Text>
           )}
         </View>
       );
@@ -110,17 +112,17 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
       const pissColor = pissEntry.colorId != null ? getPissColor(pissEntry.colorId) : null;
       return (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Color</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Color</Text>
           {pissColor ? (
             <View style={styles.detailRow}>
-              <View style={[styles.colorSwatch, { backgroundColor: pissColor.hexValue }]} />
+              <View style={[styles.colorSwatch, { backgroundColor: pissColor.hexValue, borderColor: colors.border }]} />
               <View style={styles.colorInfo}>
-                <Text style={styles.detailValue}>{pissColor.name}</Text>
-                <Text style={styles.detailSubtext}>{pissColor.medicalDescription}</Text>
+                <Text style={[styles.detailValue, { color: colors.text }]}>{pissColor.name}</Text>
+                <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{pissColor.medicalDescription}</Text>
               </View>
             </View>
           ) : (
-            <Text style={styles.placeholderText}>No color selected</Text>
+            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No color selected</Text>
           )}
         </View>
       );
@@ -133,15 +135,15 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
     const smellOption = SMELL_OPTIONS.find((opt) => opt.value === pissEntry.smell);
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Smell</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Smell</Text>
         {smellOption ? (
           <View style={styles.detailRow}>
-            <Text style={styles.detailValue}>
+            <Text style={[styles.detailValue, { color: colors.text }]}>
               {smellOption.emoji} {smellOption.label}
             </Text>
           </View>
         ) : (
-          <Text style={styles.placeholderText}>No smell level set</Text>
+          <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No smell level set</Text>
         )}
       </View>
     );
@@ -149,25 +151,25 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#FF4500" />
+      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!entry) {
     return (
-      <View style={[styles.errorContainer, { paddingTop: insets.top }]}>
-        <Text style={styles.errorText}>Entry not found</Text>
+      <View style={[styles.errorContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.textSecondary }]}>Entry not found</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-          <Text style={styles.backLinkText}>← Go back</Text>
+          <Text style={[styles.backLinkText, { color: colors.primary }]}>← Go back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <Toast
         visible={showToast}
         message={toastMessage}
@@ -176,16 +178,16 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
       />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => router.back()}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Text style={styles.headerButtonText}>←</Text>
+          <Text style={[styles.headerButtonText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
           {type === 'poop' ? 'Poop Entry' : 'Piss Entry'}
         </Text>
         <View style={styles.headerActions}>
@@ -195,7 +197,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
             accessibilityLabel="Edit entry"
             accessibilityRole="button"
           >
-            <Text style={styles.editButtonText}>Edit</Text>
+            <Text style={[styles.editButtonText, { color: colors.primary }]}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleDelete}
@@ -203,7 +205,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
             accessibilityLabel="Delete entry"
             accessibilityRole="button"
           >
-            <Text style={styles.deleteButtonText}>Delete</Text>
+            <Text style={[styles.deleteButtonText, { color: colors.error }]}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -221,36 +223,36 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
 
         {/* Timestamp */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Timestamp</Text>
-          <Text style={styles.detailValue}>
+          <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Timestamp</Text>
+          <Text style={[styles.detailValue, { color: colors.text }]}>
             🕐 {formatEntryTime(entry.timestamp)}
           </Text>
         </View>
 
         {/* Location */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Location</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Location</Text>
           {entry.locationCity ? (
             <View>
-              <Text style={styles.detailValue}>📍 {entry.locationCity}</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>📍 {entry.locationCity}</Text>
               {entry.locationLat != null && entry.locationLng != null && (
-                <Text style={styles.detailSubtext}>
+                <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>
                   {entry.locationLat.toFixed(4)}, {entry.locationLng.toFixed(4)}
                 </Text>
               )}
             </View>
           ) : (
-            <Text style={styles.placeholderText}>No location recorded</Text>
+            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No location recorded</Text>
           )}
         </View>
 
         {/* Comment */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Comment</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Comment</Text>
           {entry.comment ? (
-            <Text style={styles.detailValue}>{entry.comment}</Text>
+            <Text style={[styles.detailValue, { color: colors.text }]}>{entry.comment}</Text>
           ) : (
-            <Text style={styles.placeholderText}>No comment</Text>
+            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No comment</Text>
           )}
         </View>
       </ScrollView>
@@ -273,24 +275,20 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#999',
     marginBottom: 16,
   },
   backLink: {
@@ -298,7 +296,6 @@ const styles = StyleSheet.create({
   },
   backLinkText: {
     fontSize: 14,
-    color: '#007AFF',
   },
   header: {
     flexDirection: 'row',
@@ -307,24 +304,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerButtonText: {
     fontSize: 18,
-    color: '#333',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#333',
   },
   headerActions: {
     flexDirection: 'row',
@@ -335,12 +328,10 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 14,
-    color: '#007AFF',
     fontWeight: '600',
   },
   deleteButtonText: {
     fontSize: 14,
-    color: '#FF3B30',
     fontWeight: '600',
   },
   scrollView: {
@@ -356,7 +347,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -367,17 +357,14 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
-    color: '#333',
     fontWeight: '500',
   },
   detailSubtext: {
     fontSize: 14,
-    color: '#666',
     marginTop: 2,
   },
   placeholderText: {
     fontSize: 14,
-    color: '#999',
     fontStyle: 'italic',
   },
   colorSwatch: {
@@ -385,7 +372,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     marginRight: 12,
   },
   colorInfo: {

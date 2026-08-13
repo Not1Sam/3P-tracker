@@ -42,6 +42,67 @@ jest.mock('@/components/history/EntryCard', () => ({
   }),
 }));
 
+jest.mock('react-native-mmkv', () => {
+  const store = new Map<string, string | number | boolean>();
+  return {
+    createMMKV: () => ({
+      getString: (key: string) => store.get(key) as string | undefined,
+      getNumber: (key: string) => store.get(key) as number | undefined,
+      getBoolean: (key: string) => store.get(key) as boolean | undefined,
+      set: (key: string, value: string | number | boolean) => store.set(key, value),
+      delete: (key: string) => store.delete(key),
+      contains: (key: string) => store.has(key),
+      clearAll: () => store.clear(),
+    }),
+  };
+});
+
+jest.mock('@/contexts/ThemeContext', () => {
+  const playfulTheme = {
+    mode: 'playful',
+    colors: {
+      primary: '#8B4513',
+      primaryLight: '#A0522D',
+      primaryDark: '#6B3410',
+      accent: '#FF6B6B',
+      accentLight: '#FF8E8E',
+      success: '#4CAF50',
+      warning: '#FFC107',
+      error: '#F44336',
+      background: '#FFF8F0',
+      surface: '#FFFFFF',
+      surfaceVariant: '#FFF0E6',
+      text: '#333333',
+      textSecondary: '#666666',
+      textTertiary: '#999999',
+      textInverse: '#FFFFFF',
+      border: '#E8DDD0',
+      borderLight: '#F0E8DE',
+      poop: '#8B4513',
+      poopLight: '#D2B48C',
+      piss: '#FFD700',
+      pissLight: '#FFF3B0',
+      calendarAccent: '#FF6B6B',
+      disabled: '#B0C4DE',
+    },
+    spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 },
+    borderRadius: { sm: 4, md: 8, lg: 12, xl: 16, full: 999 },
+    fontSizes: { xs: 10, sm: 12, md: 14, lg: 16, xl: 20, xxl: 24 },
+    fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
+  };
+  return {
+    ThemeProvider: ({ children }: any) => children,
+    useTheme: () => ({
+      theme: playfulTheme,
+      mode: 'playful',
+      setMode: jest.fn(),
+      toggleMode: jest.fn(),
+    }),
+    useThemeColors: () => playfulTheme.colors,
+    useThemeSpacing: () => playfulTheme.spacing,
+  };
+});
+
 // Mock date-helpers
 jest.mock('@/utils/date-helpers', () => ({
   formatEntryTime: jest.fn(() => '10:30 AM'),

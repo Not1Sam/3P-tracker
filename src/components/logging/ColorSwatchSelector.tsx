@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { PISS_COLORS } from '@/constants/color-palette';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { CustomColor } from '@/types/logging';
 
 interface ColorSwatchSelectorProps {
@@ -23,6 +24,8 @@ export function ColorSwatchSelector({
   onAddCustom,
   customColors = [],
 }: ColorSwatchSelectorProps) {
+  const colors = useThemeColors();
+
   const handleSwatchPress = (colorId: number) => {
     const color = PISS_COLORS.find((c) => c.id === colorId);
     if (color) {
@@ -44,10 +47,12 @@ export function ColorSwatchSelector({
           style={[
             styles.swatch,
             { backgroundColor: item.hexValue },
-            isSelected ? styles.swatchSelected : styles.swatchUnselected,
+            isSelected
+              ? [styles.swatchSelected, { borderColor: colors.primary }]
+              : [styles.swatchUnselected, { borderColor: colors.border }],
           ]}
         />
-        <Text style={styles.label} numberOfLines={1}>
+        <Text style={[styles.label, { color: colors.textSecondary }]} numberOfLines={1}>
           {item.name}
         </Text>
       </TouchableOpacity>
@@ -60,12 +65,12 @@ export function ColorSwatchSelector({
       accessibilityLabel={`Custom color: ${item.name}`}
       accessibilityRole="button"
     >
-      <View style={[styles.swatch, { backgroundColor: item.hexValue }, styles.swatchUnselected]}>
-        <View style={styles.customBadge}>
-          <Text style={styles.customBadgeText}>Custom</Text>
+      <View style={[styles.swatch, { backgroundColor: item.hexValue }, styles.swatchUnselected, { borderColor: colors.border }]}>
+        <View style={[styles.customBadge, { backgroundColor: colors.surfaceVariant }]}>
+          <Text style={[styles.customBadgeText, { color: colors.textSecondary }]}>Custom</Text>
         </View>
       </View>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text style={[styles.label, { color: colors.textSecondary }]} numberOfLines={1}>
         {item.name}
       </Text>
     </TouchableOpacity>
@@ -78,10 +83,10 @@ export function ColorSwatchSelector({
       accessibilityLabel="Add Custom Color"
       accessibilityRole="button"
     >
-      <View style={[styles.swatch, styles.addSwatch]}>
-        <Text style={styles.addIcon}>+</Text>
+      <View style={[styles.swatch, styles.addSwatch, { borderColor: colors.border, backgroundColor: colors.surfaceVariant }]}>
+        <Text style={[styles.addIcon, { color: colors.textTertiary }]}>+</Text>
       </View>
-      <Text style={styles.label}>Add Custom</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Add Custom</Text>
     </TouchableOpacity>
   );
 
@@ -131,16 +136,13 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 3,
-    borderColor: '#FF4500',
   },
   swatchUnselected: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
   },
   label: {
     fontSize: 10,
     marginTop: 4,
-    color: '#666',
     textAlign: 'center',
     maxWidth: 56,
   },
@@ -148,24 +150,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    backgroundColor: '#E0E0E0',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
   },
   customBadgeText: {
     fontSize: 7,
-    color: '#666',
     fontWeight: '600',
   },
   addSwatch: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderStyle: 'dashed',
-    backgroundColor: '#FAFAFA',
   },
   addIcon: {
     fontSize: 20,
-    color: '#999',
   },
 });

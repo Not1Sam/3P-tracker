@@ -18,9 +18,11 @@ type MarkedDateValue = {
 type MarkedDates = Record<string, MarkedDateValue>;
 import { useFocusEffect, useRouter } from 'expo-router';
 import { getCalendarMarkedDates } from '@/services/history-service';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 export function CalendarScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
   const [currentMonth, setCurrentMonth] = useState({
     year: new Date().getFullYear(),
@@ -38,7 +40,7 @@ export function CalendarScreen() {
           ...(marks[dateStr] || {}),
           dots: [
             ...(marks[dateStr]?.dots || []),
-            { key: 'poop', color: '#8B4513' },
+            { key: 'poop', color: colors.poop },
           ],
         };
       }
@@ -49,7 +51,7 @@ export function CalendarScreen() {
           ...(marks[dateStr] || {}),
           dots: [
             ...(marks[dateStr]?.dots || []),
-            { key: 'piss', color: '#FFD700' },
+            { key: 'piss', color: colors.piss },
           ],
         };
       }
@@ -58,7 +60,7 @@ export function CalendarScreen() {
     } catch (error) {
       console.error('Failed to load calendar data:', error);
     }
-  }, []);
+  }, [colors.poop, colors.piss]);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,7 +77,7 @@ export function CalendarScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Calendar
         markingType="multi-dot"
         markedDates={markedDates}
@@ -88,8 +90,13 @@ export function CalendarScreen() {
             height: 6,
             borderRadius: 3,
           },
-          todayTextColor: '#FF4500',
-          arrowColor: '#FF4500',
+          todayTextColor: colors.calendarAccent,
+          arrowColor: colors.calendarAccent,
+          backgroundColor: colors.background,
+          calendarBackground: colors.background,
+          textSectionTitleColor: colors.textSecondary,
+          monthTextColor: colors.text,
+          dayTextColor: colors.text,
         }}
       />
     </View>
@@ -99,6 +106,5 @@ export function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
 });

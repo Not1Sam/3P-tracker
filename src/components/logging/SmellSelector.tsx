@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SMELL_OPTIONS } from '@/constants/smell-options';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { SmellLevel } from '@/types/logging';
 
 interface SmellSelectorProps {
@@ -9,6 +10,8 @@ interface SmellSelectorProps {
 }
 
 export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
+  const colors = useThemeColors();
+
   const handlePress = (value: SmellLevel) => {
     // Toggle behavior: tap selected pill again to deselect
     if (selected === value) {
@@ -25,14 +28,24 @@ export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
         return (
           <TouchableOpacity
             key={option.value}
-            style={[styles.pill, isSelected ? styles.pillSelected : styles.pillUnselected]}
+            style={[
+              styles.pill,
+              isSelected
+                ? [styles.pillSelected, { borderColor: colors.primary, backgroundColor: colors.primaryLight + '20' }]
+                : [styles.pillUnselected, { borderColor: colors.border, backgroundColor: colors.surface }],
+            ]}
             onPress={() => handlePress(option.value)}
             accessibilityLabel={`Smell: ${option.label}`}
             accessibilityRole="button"
           >
             <Text style={styles.emoji}>{option.emoji}</Text>
             <Text
-              style={[styles.label, isSelected ? styles.labelSelected : styles.labelUnselected]}
+              style={[
+                styles.label,
+                isSelected
+                  ? [styles.labelSelected, { color: colors.text }]
+                  : [styles.labelUnselected, { color: colors.textSecondary }],
+              ]}
             >
               {option.label}
             </Text>
@@ -57,13 +70,9 @@ const styles = StyleSheet.create({
   },
   pillSelected: {
     borderWidth: 1,
-    borderColor: '#FF4500',
-    backgroundColor: '#FFF0E6',
   },
   pillUnselected: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFF',
   },
   emoji: {
     fontSize: 14,
@@ -74,10 +83,8 @@ const styles = StyleSheet.create({
   },
   labelSelected: {
     fontWeight: '600',
-    color: '#333',
   },
   labelUnselected: {
     fontWeight: '400',
-    color: '#666',
   },
 });

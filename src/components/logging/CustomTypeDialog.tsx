@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   StyleSheet,
 } from 'react-native';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 interface CustomTypeDialogProps {
   visible: boolean;
@@ -22,6 +23,7 @@ export function CustomTypeDialog({
   onSave,
   title,
 }: CustomTypeDialogProps) {
+  const colors = useThemeColors();
   const [name, setName] = useState('');
 
   const handleSave = () => {
@@ -49,27 +51,28 @@ export function CustomTypeDialog({
       <TouchableWithoutFeedback onPress={handleClose}>
         <View style={styles.backdrop}>
           <TouchableWithoutFeedback>
-            <View style={styles.card}>
-              <Text style={styles.title}>{title}</Text>
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: colors.border, color: colors.text }]}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter name..."
+                placeholderTextColor={colors.textTertiary}
                 autoFocus={true}
                 accessibilityLabel="Custom type name"
               />
               <View style={styles.buttonRow}>
                 <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
+                  style={[styles.button, { backgroundColor: colors.surfaceVariant }]}
                   onPress={handleClose}
                   accessibilityLabel="Cancel"
                   accessibilityRole="button"
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.button, styles.saveButton, !name.trim() && styles.saveButtonDisabled]}
+                  style={[styles.button, { backgroundColor: !name.trim() ? colors.disabled : colors.primary }]}
                   onPress={handleSave}
                   disabled={!name.trim()}
                   accessibilityLabel="Save"
@@ -94,7 +97,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   card: {
-    backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 24,
     width: '80%',
@@ -103,16 +105,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
-    color: '#333',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -124,18 +123,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
   },
-  cancelButton: {
-    backgroundColor: '#E0E0E0',
-  },
   cancelButtonText: {
-    color: '#666',
     fontWeight: '600',
-  },
-  saveButton: {
-    backgroundColor: '#007AFF',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#B0C4DE',
   },
   saveButtonText: {
     color: '#FFF',

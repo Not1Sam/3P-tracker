@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { CapturedLocation } from '@/types/logging';
 
 interface LocationStatusProps {
@@ -8,10 +9,12 @@ interface LocationStatusProps {
 }
 
 export function LocationStatus({ location, loading }: LocationStatusProps) {
+  const colors = useThemeColors();
+
   if (loading) {
     return (
       <Text
-        style={styles.text}
+        style={[styles.text, { color: colors.textTertiary }]}
         accessibilityLabel="Finding location"
         accessibilityRole="text"
       >
@@ -24,7 +27,7 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
     if (location.city) {
       return (
         <Text
-          style={styles.text}
+          style={[styles.text, { color: colors.textSecondary }]}
           accessibilityLabel={`Location: ${location.city}`}
           accessibilityRole="text"
         >
@@ -34,7 +37,7 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
     }
     return (
       <Text
-        style={styles.text}
+        style={[styles.text, { color: colors.textSecondary }]}
         accessibilityLabel="Location saved as coordinates"
         accessibilityRole="text"
       >
@@ -45,7 +48,7 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
 
   return (
     <Text
-      style={styles.unavailable}
+      style={[styles.text, { color: colors.textTertiary }]}
       accessibilityLabel="Location unavailable"
       accessibilityRole="text"
     >
@@ -57,12 +60,6 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
 const styles = StyleSheet.create({
   text: {
     fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  unavailable: {
-    fontSize: 12,
-    color: '#999',
     marginTop: 4,
   },
 });

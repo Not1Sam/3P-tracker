@@ -16,6 +16,7 @@ import { CommentField } from '@/components/logging/CommentField';
 import { CustomTypeDialog } from '@/components/logging/CustomTypeDialog';
 import { Toast } from '@/components/common/Toast';
 import { LocationStatus } from '@/components/logging/LocationStatus';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import {
   createPoopLog,
   createPissLog,
@@ -46,6 +47,7 @@ interface LoggingScreenProps {
 
 export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
   const [smell, setSmell] = useState<SmellLevel | null>(null);
@@ -87,8 +89,8 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
 
     async function loadCustomColors() {
       try {
-        const colors = await getCustomColors();
-        if (!cancelled) setCustomColors(colors);
+        const colorsData = await getCustomColors();
+        if (!cancelled) setCustomColors(colorsData);
       } catch {
         // ignore — custom colors are optional
       }
@@ -209,7 +211,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
 
   if (saved) {
     return (
-      <View style={[styles.savedContainer, { paddingTop: insets.top }]}>
+      <View style={[styles.savedContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
         <Toast
           visible={showToast}
           message={toastMessage}
@@ -222,13 +224,13 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
           onDismiss={() => setUndoToast(false)}
         />
         <Text style={styles.savedEmoji}>✅</Text>
-        <Text style={styles.savedText}>Entry saved!</Text>
+        <Text style={[styles.savedText, { color: colors.text }]}>Entry saved!</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <Toast
         visible={showToast}
         message={toastMessage}
@@ -248,22 +250,22 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={onClose}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Text style={styles.headerButtonText}>←</Text>
+          <Text style={[styles.headerButtonText, { color: colors.text }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
           {type === 'poop' ? 'Log Poop' : 'Log Piss'}
         </Text>
         <TouchableOpacity
           onPress={onClose}
-          style={styles.headerButton}
+          style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Close"
           accessibilityRole="button"
         >
-          <Text style={styles.headerButtonText}>✕</Text>
+          <Text style={[styles.headerButtonText, { color: colors.text }]}>✕</Text>
         </TouchableOpacity>
       </View>
 
@@ -273,7 +275,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         accessibilityLabel={`Timestamp: ${formatTime(timestamp)}`}
       >
         <Text style={styles.timestampIcon}>🕐</Text>
-        <Text style={styles.timestampText}>{formatTime(timestamp)}</Text>
+        <Text style={[styles.timestampText, { color: colors.textSecondary }]}>{formatTime(timestamp)}</Text>
       </TouchableOpacity>
 
       {/* Location display */}
@@ -303,7 +305,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       {/* Smell selector (piss only) */}
       {type === 'piss' && (
         <View style={styles.smellSection}>
-          <Text style={styles.sectionLabel}>Smell</Text>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>Smell</Text>
           <SmellSelector selected={smell} onSelect={setSmell} />
         </View>
       )}
@@ -323,7 +325,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
 
       {/* Save button */}
       <TouchableOpacity
-        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+        style={[styles.saveButton, { backgroundColor: saving ? colors.disabled : colors.primary }]}
         onPress={handleSave}
         disabled={saving}
         accessibilityLabel="Save Entry"
@@ -351,7 +353,6 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
   scrollView: {
     flex: 1,
@@ -370,18 +371,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerButtonText: {
     fontSize: 18,
-    color: '#333',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   timestampRow: {
     flexDirection: 'row',
@@ -394,7 +392,6 @@ const styles = StyleSheet.create({
   },
   timestampText: {
     fontSize: 14,
-    color: '#666',
   },
   locationRow: {
     flexDirection: 'row',
@@ -407,11 +404,9 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: '#666',
   },
   locationUnavailable: {
     fontSize: 14,
-    color: '#999',
   },
   selectorSection: {
     marginBottom: 20,
@@ -422,14 +417,12 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   commentSection: {
     marginBottom: 24,
   },
   saveButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -446,7 +439,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
   },
   savedEmoji: {
     fontSize: 64,
@@ -455,6 +447,5 @@ const styles = StyleSheet.create({
   savedText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
 });

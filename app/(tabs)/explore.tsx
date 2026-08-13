@@ -3,9 +3,11 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { FloatingActionButton } from '@/components/common/FloatingActionButton';
 import { BottomSheet } from '@/components/common/BottomSheet';
 import { LoggingScreen } from '@/screens/LoggingScreen';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import type { LogType } from '@/types/logging';
 
 export default function PissScreen() {
+  const colors = useThemeColors();
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [showLogging, setShowLogging] = useState(false);
   const [selectedType, setSelectedType] = useState<LogType | null>(null);
@@ -41,9 +43,9 @@ export default function PissScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={styles.emoji}>🚽</Text>
-      <Text style={styles.text}>Tap 🚽 to log</Text>
+      <Text style={[styles.text, { color: colors.textSecondary }]}>Tap 🚽 to log</Text>
 
       <FloatingActionButton onPress={handleFabPress} />
 
@@ -54,23 +56,23 @@ export default function PissScreen() {
       >
         <View style={styles.sheetContent}>
           <TouchableOpacity
-            style={[styles.typeButton, styles.poopButton]}
+            style={[styles.typeButton, { backgroundColor: colors.poopLight, borderColor: colors.poop }]}
             onPress={() => handleSelectType('poop')}
             accessibilityLabel="Log Poop"
             accessibilityRole="button"
           >
             <Text style={styles.typeEmoji}>💩</Text>
-            <Text style={styles.typeLabel}>Poop</Text>
+            <Text style={[styles.typeLabel, { color: colors.text }]}>Poop</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.typeButton, styles.pissButton]}
+            style={[styles.typeButton, { backgroundColor: colors.pissLight, borderColor: colors.piss }]}
             onPress={() => handleSelectType('piss')}
             accessibilityLabel="Log Piss"
             accessibilityRole="button"
           >
             <Text style={styles.typeEmoji}>🚽</Text>
-            <Text style={styles.typeLabel}>Piss</Text>
+            <Text style={[styles.typeLabel, { color: colors.text }]}>Piss</Text>
           </TouchableOpacity>
         </View>
       </BottomSheet>
@@ -83,7 +85,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
   emoji: {
     fontSize: 64,
@@ -91,7 +92,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    color: '#666',
   },
   sheetContent: {
     flexDirection: 'row',
@@ -103,16 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  poopButton: {
-    backgroundColor: '#FFF0E6',
     borderWidth: 1,
-    borderColor: '#DEB887',
-  },
-  pissButton: {
-    backgroundColor: '#FFFDE6',
-    borderWidth: 1,
-    borderColor: '#F0E68C',
   },
   typeEmoji: {
     fontSize: 48,
@@ -121,6 +112,5 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
 });

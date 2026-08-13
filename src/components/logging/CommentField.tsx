@@ -9,6 +9,7 @@ import {
   UIManager,
   StyleSheet,
 } from 'react-native';
+import { useThemeColors } from '@/contexts/ThemeContext';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -28,6 +29,7 @@ export function CommentField({
   placeholder,
   collapsed = true,
 }: CommentFieldProps) {
+  const colors = useThemeColors();
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
   const handleToggle = () => {
@@ -38,24 +40,25 @@ export function CommentField({
   if (isCollapsed) {
     return (
       <TouchableOpacity
-        style={styles.collapsedContainer}
+        style={[styles.collapsedContainer, { borderColor: colors.border, backgroundColor: colors.surfaceVariant }]}
         onPress={handleToggle}
         accessibilityLabel="Add a note"
         accessibilityRole="button"
       >
-        <Text style={styles.collapsedText}>Add a note...</Text>
-        <Text style={styles.chevron}>▾</Text>
+        <Text style={[styles.collapsedText, { color: colors.textTertiary }]}>Add a note...</Text>
+        <Text style={[styles.chevron, { color: colors.textTertiary }]}>▾</Text>
       </TouchableOpacity>
     );
   }
 
   return (
-    <View style={styles.expandedContainer}>
+    <View style={[styles.expandedContainer, { borderColor: colors.border, backgroundColor: colors.surface }]}>
       <TextInput
-        style={styles.textInput}
+        style={[styles.textInput, { color: colors.text }]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
         multiline={true}
         numberOfLines={3}
         textAlignVertical="top"
@@ -68,7 +71,7 @@ export function CommentField({
         accessibilityLabel="Collapse comment field"
         accessibilityRole="button"
       >
-        <Text style={styles.chevron}>▴</Text>
+        <Text style={[styles.chevron, { color: colors.textTertiary }]}>▴</Text>
       </TouchableOpacity>
     </View>
   );
@@ -80,30 +83,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#FAFAFA',
   },
   collapsedText: {
-    color: '#999',
     fontSize: 14,
   },
   chevron: {
-    color: '#999',
     fontSize: 16,
   },
   expandedContainer: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#FFF',
   },
   textInput: {
     fontSize: 14,
     minHeight: 72,
-    color: '#333',
   },
   collapseButton: {
     alignSelf: 'flex-end',

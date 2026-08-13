@@ -4,9 +4,14 @@ import { Stack } from 'expo-router';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
+import { NetworkProvider } from '@/contexts/NetworkContext';
 import { SplashScreen } from '@/components/common/SplashScreen';
 import { InitErrorScreen } from '@/components/common/InitErrorScreen';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { PWAInstallHint } from '@/components/PWAInstallHint';
 import { initializeApp } from '@/services/app-init';
+import { checkForUpdate } from '@/services/update-checker';
+import { syncLeaderboards } from '@/services/leaderboard-service';
 import { SQLiteDatabase } from 'expo-sqlite';
 
 export default function RootLayout() {
@@ -30,6 +35,18 @@ export default function RootLayout() {
   useEffect(() => {
     initApp();
   }, [initApp]);
+
+  // Check for updates and sync leaderboards on app open
+  useEffect(() => {
+    if (initialized) {
+      checkForUpdate().catch(() => {
+        // Silently ignore update check failures
+      });
+      syncLeaderboards().catch(() => {
+        // Silently ignore sync failures — will retry on next app open
+      });
+    }
+  }, [initialized]);
 
   const handleSplashFinish = useCallback(() => {
     setShowSplash(false);
@@ -71,10 +88,14 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <ProfileProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="entry" options={{ headerShown: false }} />
-          </Stack>
+          <NetworkProvider>
+            <OfflineBanner />
+            <PWAInstallHint />
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="entry" options={{ headerShown: false }} />
+            </Stack>
+          </NetworkProvider>
         </ProfileProvider>
       </AuthProvider>
     </ThemeProvider>

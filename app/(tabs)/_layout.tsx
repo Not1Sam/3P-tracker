@@ -80,6 +80,16 @@ export default function TabLayout() {
           tabBarActiveTintColor: colors.textSecondary,
         }}
       />
+      <Tabs.Screen
+        name="period"
+        options={{
+          title: 'Period',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="water" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: colors.period,
+        }}
+      />
     </Tabs>
   );
 }

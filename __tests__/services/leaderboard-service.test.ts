@@ -1,6 +1,6 @@
 /**
  * Tests for leaderboard-service.ts
- * RED-phase tests with mocked database and Supabase layers.
+ * GREEN-phase tests with mocked database and Supabase layers.
  *
  * Covers: getPersonalScore, calculateStreak, getFriendsLeaderboard, getGlobalLeaderboard
  * Requirements: LEAD-01 through LEAD-07
@@ -19,15 +19,6 @@ jest.mock('@/db', () => ({
   getDatabase: jest.fn().mockResolvedValue(mockDb),
 }));
 
-// ─── Mock: @/services/supabase-client ─────────────────────────────
-const mockSupabase: any = {
-  from: jest.fn(),
-};
-
-jest.mock('@/services/supabase-client', () => ({
-  supabase: mockSupabase,
-}));
-
 // ─── Mock: @/services/auth-service ─────────────────────────────────
 const mockAuthUser = { id: 'user-1', email: 'test@example.com' };
 
@@ -35,46 +26,25 @@ jest.mock('@/services/auth-service', () => ({
   getCurrentUser: jest.fn(),
 }));
 
+// ─── Mock: @/services/supabase-client (using factory function) ─────
+// We need to control the chain per-test, so use a mutable resolver
+let supabaseFromHandler: ((table: string) => any) | null = null;
+
+jest.mock('@/services/supabase-client', () => ({
+  get supabase() {
+    return {
+      from: (table: string) => {
+        if (!supabaseFromHandler) {
+          throw new Error(`supabase.from('${table}') called but no handler set`);
+        }
+        return supabaseFromHandler(table);
+      },
+    };
+  },
+}));
+
 import { getCurrentUser } from '@/services/auth-service';
-
-// ─── Helper: build a Supabase eq() chain that resolves at depth N ──
-function buildEqChain(depth: number, resolveData: any, error: any = null): any {
-  if (depth <= 0) {
-    return { data: resolveData, error };
-  }
-  const eqFn = jest.fn().mockReturnValue(buildEqChain(depth - 1, resolveData, error));
-  return { eq: eqFn };
-}
-
-// ─── Helper: set up Supabase mock for friends query ────────────────
-function mockFriendsQuery(data: any, error: any = null) {
-  mockSupabase.from.mockReturnValueOnce({
-    select: jest.fn().mockReturnValue({
-      eq: jest.fn().mockResolvedValue({ data, error }),
-    }),
-  });
-}
-
-// ─── Helper: set up Supabase mock for monthly_summaries with .in() ─
-function mockSummariesQuery(data: any, error: any = null) {
-  // Chain: select().in().eq().eq() — depth 3 after .in()
-  mockSupabase.from.mockReturnValueOnce({
-    select: jest.fn().mockReturnValue({
-      in: jest.fn().mockReturnValue(buildEqChain(3, data, error)),
-    }),
-  });
-}
-
-// ─── Helper: set up Supabase mock for global query ─────────────────
-function mockGlobalQuery(data: any, error: any = null) {
-  mockSupabase.from.mockReturnValueOnce({
-    select: jest.fn().mockReturnValue({
-      order: jest.fn().mockReturnValue({
-        limit: jest.fn().mockResolvedValue({ data, error }),
-      }),
-    }),
-  });
-}
+import { supabase } from '@/services/supabase-client';
 
 // ─── Imports (after mocks) ────────────────────────────────────────
 import {
@@ -86,7 +56,7 @@ import {
 
 // ─── Test setup ────────────────────────────────────────────────────
 beforeEach(() => {
-  jest.clearAllMocks();
+  supabaseFromHandler = null;
 
   // Reset Drizzle chain mocks
   mockDb.select.mockReturnValue(mockDb);
@@ -177,9 +147,6 @@ describe('leaderboard-service', () => {
       const today = new Date();
       today.setHours(10, 0, 0, 0);
 
-      // Today: log present
-      // Yesterday: no log (grace day used)
-      // 2 days ago: log present
       const twoDaysAgo = new Date(today);
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
       twoDaysAgo.setHours(12, 0, 0, 0);
@@ -190,7 +157,6 @@ describe('leaderboard-service', () => {
       ]);
 
       const streak = await calculateStreak('poop');
-      // Should count: today (1) + grace over yesterday (2) + 2-days-ago (3)
       expect(streak).toBe(3);
     });
 
@@ -198,10 +164,6 @@ describe('leaderboard-service', () => {
       const today = new Date();
       today.setHours(10, 0, 0, 0);
 
-      // Today: log present
-      // Yesterday: no log (grace day used)
-      // 2 days ago: no log (grace exhausted -> streak breaks)
-      // 3 days ago: log present (unreachable)
       const threeDaysAgo = new Date(today);
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       threeDaysAgo.setHours(12, 0, 0, 0);
@@ -212,7 +174,6 @@ describe('leaderboard-service', () => {
       ]);
 
       const streak = await calculateStreak('poop');
-      // Should count: today (1) + grace over yesterday (2), then break at 2-days-ago
       expect(streak).toBe(2);
     });
 
@@ -241,17 +202,34 @@ describe('leaderboard-service', () => {
     });
 
     it('fetches friends monthly_summaries and includes current user', async () => {
-      // Friends query
-      mockFriendsQuery([
-        { friend_id: 'friend-1' },
-        { friend_id: 'friend-2' },
-      ]);
-
-      // Monthly summaries query
-      mockSummariesQuery([
+      const friendsData = [{ friend_id: 'friend-1' }, { friend_id: 'friend-2' }];
+      const summariesData = [
         { user_id: 'friend-1', poop_count: 10, profiles: { username: 'alice' } },
         { user_id: 'friend-2', poop_count: 5, profiles: { username: 'bob' } },
-      ]);
+      ];
+      let fromCallCount = 0;
+
+      supabaseFromHandler = (table: string) => {
+        if (table === 'friends') {
+          return {
+            select: () => ({
+              eq: () => Promise.resolve({ data: friendsData, error: null }),
+            }),
+          };
+        }
+        if (table === 'monthly_summaries') {
+          return {
+            select: () => ({
+              in: () => ({
+                eq: () => ({
+                  eq: () => Promise.resolve({ data: summariesData, error: null }),
+                }),
+              }),
+            }),
+          };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      };
 
       // getPersonalScore mock
       mockDb.where.mockResolvedValueOnce([{ result: 7 }]);
@@ -267,24 +245,46 @@ describe('leaderboard-service', () => {
     });
 
     it('returns entries sorted by score descending', async () => {
-      mockFriendsQuery([{ friend_id: 'f1' }]);
-
-      mockSummariesQuery([
-        { user_id: 'f1', poop_count: 2, profiles: { username: 'low' } },
-      ]);
+      supabaseFromHandler = (table: string) => {
+        if (table === 'friends') {
+          return {
+            select: () => ({
+              eq: () => Promise.resolve({ data: [{ friend_id: 'f1' }], error: null }),
+            }),
+          };
+        }
+        if (table === 'monthly_summaries') {
+          return {
+            select: () => ({
+              in: () => ({
+                eq: () => ({
+                  eq: () => Promise.resolve({
+                    data: [{ user_id: 'f1', poop_count: 2, profiles: { username: 'low' } }],
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      };
 
       // personal score = 10 (higher than friend)
       mockDb.where.mockResolvedValueOnce([{ result: 10 }]);
       mockDb.orderBy.mockResolvedValueOnce([{ timestamp: new Date() }]);
 
       const entries = await getFriendsLeaderboard('poop');
-      // Self (10) should be first, friend (2) second
       expect(entries[0].score).toBe(10);
       expect(entries[1].score).toBe(2);
     });
 
     it('marks current user with isCurrentUser: true', async () => {
-      mockFriendsQuery([]);
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => Promise.resolve({ data: [], error: null }),
+        }),
+      });
 
       mockDb.where.mockResolvedValueOnce([{ result: 5 }]);
       mockDb.orderBy.mockResolvedValueOnce([{ timestamp: new Date() }]);
@@ -294,7 +294,11 @@ describe('leaderboard-service', () => {
     });
 
     it('returns just self when user has no friends', async () => {
-      mockFriendsQuery([]);
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => Promise.resolve({ data: [], error: null }),
+        }),
+      });
 
       mockDb.where.mockResolvedValueOnce([{ result: 3 }]);
       mockDb.orderBy.mockResolvedValueOnce([{ timestamp: new Date() }]);
@@ -306,7 +310,11 @@ describe('leaderboard-service', () => {
     });
 
     it('handles Supabase errors gracefully (returns empty array)', async () => {
-      mockFriendsQuery(null, new Error('Supabase error'));
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => Promise.resolve({ data: null, error: new Error('Supabase error') }),
+        }),
+      });
 
       const entries = await getFriendsLeaderboard('poop');
       expect(entries).toEqual([]);
@@ -331,10 +339,23 @@ describe('leaderboard-service', () => {
     });
 
     it('fetches top 100 summaries from monthly_summaries', async () => {
-      mockGlobalQuery([
-        { user_id: 'u1', poop_count: 20, profiles: { username: 'top' } },
-        { user_id: 'u2', poop_count: 15, profiles: { username: 'second' } },
-      ]);
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => Promise.resolve({
+                  data: [
+                    { user_id: 'u1', poop_count: 20, profiles: { username: 'top' } },
+                    { user_id: 'u2', poop_count: 15, profiles: { username: 'second' } },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+      });
 
       // personal score + streak mocks
       mockDb.where.mockResolvedValueOnce([{ result: 5 }]);
@@ -345,27 +366,45 @@ describe('leaderboard-service', () => {
     });
 
     it('includes current user if not in top 100', async () => {
-      // Top 100 has other users, not the current user
       const topEntries = Array.from({ length: 100 }, (_, i: number) => ({
         user_id: `other-${i}`,
         poop_count: 100 - i,
         profiles: { username: `user${i}` },
       }));
 
-      mockGlobalQuery(topEntries);
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => Promise.resolve({ data: topEntries, error: null }),
+              }),
+            }),
+          }),
+        }),
+      });
 
       // personal score = 50
       mockDb.where.mockResolvedValueOnce([{ result: 50 }]);
       mockDb.orderBy.mockResolvedValueOnce([{ timestamp: new Date() }]);
 
       const entries = await getGlobalLeaderboard('poop');
-      // Should have 101 entries: 100 from Supabase + self appended
       expect(entries.length).toBe(101);
       expect(entries.some((e: any) => e.userId === 'user-1' && e.isCurrentUser)).toBe(true);
     });
 
     it('handles Supabase errors gracefully (returns empty array)', async () => {
-      mockGlobalQuery(null, new Error('Supabase error'));
+      supabaseFromHandler = () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => Promise.resolve({ data: null, error: new Error('Supabase error') }),
+              }),
+            }),
+          }),
+        }),
+      });
 
       const entries = await getGlobalLeaderboard('poop');
       expect(entries).toEqual([]);

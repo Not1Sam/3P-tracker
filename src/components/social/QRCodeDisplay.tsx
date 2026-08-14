@@ -13,6 +13,7 @@ import * as Sharing from 'expo-sharing';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { getInviteUrl } from '@/services/social-service';
 import { Toast } from '@/components/common/Toast';
+import { logger } from '@/utils/logger';
 
 interface QRCodeDisplayProps {
   inviteCode: string;
@@ -28,6 +29,7 @@ export function QRCodeDisplay({ inviteCode, onRegenerate }: QRCodeDisplayProps) 
   const inviteUrl = getInviteUrl(inviteCode);
 
   const handleCopyLink = async () => {
+    logger.uiAction('QRCodeDisplay: copy_link');
     try {
       await Clipboard.setStringAsync(inviteUrl);
       setToastMessage('Invite link copied!');
@@ -35,10 +37,12 @@ export function QRCodeDisplay({ inviteCode, onRegenerate }: QRCodeDisplayProps) 
     } catch {
       setToastMessage('Failed to copy link');
       setShowToast(true);
+      logger.uiError('QRCodeDisplay: copy_link_failed');
     }
   };
 
   const handleShareLink = async () => {
+    logger.uiAction('QRCodeDisplay: share_link');
     try {
       setIsSharing(true);
       if (await Sharing.isAvailableAsync()) {
@@ -55,18 +59,20 @@ export function QRCodeDisplay({ inviteCode, onRegenerate }: QRCodeDisplayProps) 
     } catch {
       setToastMessage('Failed to share link');
       setShowToast(true);
+      logger.uiError('QRCodeDisplay: share_link_failed');
     } finally {
       setIsSharing(false);
     }
   };
 
   const handleRegenerate = () => {
+    logger.uiAction('QRCodeDisplay: regenerate_code_prompt');
     Alert.alert(
       'Regenerate Code',
       'This will invalidate your current invite link. Anyone with the old link won\'t be able to use it.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Regenerate', style: 'destructive', onPress: onRegenerate },
+        { text: 'Regenerate', style: 'destructive', onPress: () => { logger.uiAction('QRCodeDisplay: regenerate_code_confirm'); onRegenerate(); } },
       ],
     );
   };

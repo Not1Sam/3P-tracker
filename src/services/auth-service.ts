@@ -78,12 +78,18 @@ export async function signOut(): Promise<{ error: string | null }> {
 
 /**
  * Get the current user session.
+ * Uses getUser() to validate against the server, not just the local cache.
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
-    logger.auth(user ? `User session found: ${user.id}` : 'No user session');
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      // Stale or invalid session — clear it
+      logger.auth('No valid session, clearing stale auth');
+      await supabase.auth.signOut();
+      return null;
+    }
+    logger.auth(`User session found: ${user.id}`);
     return user;
   } catch (e) {
     logger.authError('Failed to get session');

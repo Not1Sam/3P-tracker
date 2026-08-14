@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { CycleData } from '@/types/period';
 
 interface CycleOverviewProps {
@@ -9,6 +10,13 @@ interface CycleOverviewProps {
 
 export function CycleOverview({ cycleData }: CycleOverviewProps) {
   const colors = useThemeColors();
+
+  logger.period('CycleOverview rendered', {
+    hasData: !!cycleData,
+    cycleDay: cycleData?.currentCycleDay,
+    cycleCount: cycleData?.cycleStartDates.length,
+    confidence: cycleData?.confidence,
+  });
 
   if (
     !cycleData ||

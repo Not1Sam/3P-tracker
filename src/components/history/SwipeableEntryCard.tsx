@@ -4,6 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { EntryCard } from './EntryCard';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { hapticMedium } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface SwipeableEntryCardProps {
@@ -26,6 +27,7 @@ export function SwipeableEntryCard({
       style={[styles.deleteButton, { backgroundColor: colors.error }]}
       onPress={() => {
         hapticMedium();
+        logger.inputAction('Entry swipe-delete triggered', { type, entryId: entry.id });
         onDelete(entry.id, type);
       }}
       accessibilityLabel="Delete entry"

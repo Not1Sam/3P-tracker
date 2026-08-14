@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface CustomTypeDialogProps {
   visible: boolean;
@@ -29,6 +30,7 @@ export function CustomTypeDialog({
   const handleSave = () => {
     const trimmed = name.trim();
     if (trimmed) {
+      logger.uiAction('CustomTypeDialog: save_custom_type', { name: trimmed });
       onSave(trimmed);
       setName('');
       onClose();
@@ -36,6 +38,7 @@ export function CustomTypeDialog({
   };
 
   const handleClose = () => {
+    logger.uiAction('CustomTypeDialog: close');
     setName('');
     onClose();
   };

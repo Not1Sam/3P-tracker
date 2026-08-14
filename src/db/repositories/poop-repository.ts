@@ -3,6 +3,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { poopLogs } from '@/db/schema';
+import { logger } from '@/utils/logger';
 import type {
   PoopLogInput,
   PoopLogEntry,
@@ -16,6 +17,7 @@ import type {
 export async function createPoopLog(
   input: PoopLogInput & { location?: CapturedLocation },
 ): Promise<string> {
+  logger.dbWrite('poop_logs', { typeId: input.typeId, hasLocation: !!input.location });
   const db = await getDatabase();
   const id = randomUUID();
   const now = new Date();
@@ -40,6 +42,7 @@ export async function createPoopLog(
  * @param limit Maximum number of entries to return (default: 50)
  */
 export async function getPoopLogs(limit = 50): Promise<PoopLogEntry[]> {
+  logger.dbRead('poop_logs', { limit });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -66,6 +69,7 @@ export async function getPoopLogs(limit = 50): Promise<PoopLogEntry[]> {
 export async function getPoopLogById(
   id: string,
 ): Promise<PoopLogEntry | undefined> {
+  logger.dbRead('poop_logs', { action: 'getById', id });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -94,6 +98,7 @@ export async function getPoopLogById(
  * Used for the undo feature
  */
 export async function deletePoopLog(id: string): Promise<void> {
+  logger.dbWrite('poop_logs', { action: 'delete', id });
   const db = await getDatabase();
   await db.delete(poopLogs).where(eq(poopLogs.id, id));
 }
@@ -106,6 +111,7 @@ export async function getPoopLogsByDateRange(
   start: Date,
   end: Date,
 ): Promise<PoopLogEntry[]> {
+  logger.dbRead('poop_logs', { action: 'byDateRange', start: start.toISOString(), end: end.toISOString() });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -140,6 +146,7 @@ export async function getPoopLogsByDate(
  * Get all poop log entries (for backup export)
  */
 export async function getAllPoopLogs(): Promise<any[]> {
+  logger.dbRead('poop_logs', { action: 'getAllForBackup' });
   const db = await getDatabase();
   return db.select().from(poopLogs);
 }
@@ -148,6 +155,7 @@ export async function getAllPoopLogs(): Promise<any[]> {
  * Insert a poop log entry (for backup import)
  */
 export async function insertPoopLog(row: any): Promise<void> {
+  logger.dbWrite('poop_logs', { action: 'import' });
   const db = await getDatabase();
   await db.insert(poopLogs).values(row).onConflictDoNothing();
 }
@@ -156,6 +164,7 @@ export async function insertPoopLog(row: any): Promise<void> {
  * Get count of poop logs in a date range (for leaderboard scoring)
  */
 export async function getPoopLogsCount(start: Date, end: Date): Promise<number> {
+  logger.dbRead('poop_logs', { action: 'count' });
   const db = await getDatabase();
   const [{ result }] = await db
     .select({ result: count() })
@@ -168,6 +177,7 @@ export async function getPoopLogsCount(start: Date, end: Date): Promise<number> 
  * Get all poop log timestamps since a cutoff date (for streak calculation)
  */
 export async function getPoopLogsSince(cutoff: Date): Promise<Date[]> {
+  logger.dbRead('poop_logs', { action: 'since', cutoff: cutoff.toISOString() });
   const db = await getDatabase();
   const rows = await db
     .select({ timestamp: poopLogs.timestamp })
@@ -185,6 +195,7 @@ export async function updatePoopLog(
   id: string,
   fields: { typeId?: number; comment?: string },
 ): Promise<void> {
+  logger.dbWrite('poop_logs', { action: 'update', id, fields: Object.keys(fields) });
   const db = await getDatabase();
   await db
     .update(poopLogs)

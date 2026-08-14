@@ -2,12 +2,14 @@ import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { customTypes, customColors } from '@/db/schema';
+import { logger } from '@/utils/logger';
 import type { CustomType, CustomColor } from '@/types/logging';
 
 /**
  * Create a custom poop type
  */
 export async function createCustomType(name: string): Promise<CustomType> {
+  logger.dbWrite('custom_types', { name });
   const db = await getDatabase();
   const id = randomUUID();
   const now = new Date();
@@ -25,6 +27,7 @@ export async function createCustomType(name: string): Promise<CustomType> {
  * Get all custom poop types, ordered by newest first
  */
 export async function getCustomTypes(): Promise<CustomType[]> {
+  logger.dbRead('custom_types');
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -42,6 +45,7 @@ export async function getCustomTypes(): Promise<CustomType[]> {
  * Delete a custom poop type by id
  */
 export async function deleteCustomType(id: string): Promise<void> {
+  logger.dbWrite('custom_types', { action: 'delete', id });
   const db = await getDatabase();
   await db.delete(customTypes).where(eq(customTypes.id, id));
 }
@@ -50,6 +54,7 @@ export async function deleteCustomType(id: string): Promise<void> {
  * Get all custom types (for backup export)
  */
 export async function getAllCustomTypes(): Promise<any[]> {
+  logger.dbRead('custom_types', { action: 'getAllForBackup' });
   const db = await getDatabase();
   return db.select().from(customTypes);
 }
@@ -58,6 +63,7 @@ export async function getAllCustomTypes(): Promise<any[]> {
  * Insert a custom type (for backup import)
  */
 export async function insertCustomType(row: any): Promise<void> {
+  logger.dbWrite('custom_types', { action: 'import' });
   const db = await getDatabase();
   await db.insert(customTypes).values(row).onConflictDoNothing();
 }
@@ -69,6 +75,7 @@ export async function createCustomColor(
   name: string,
   hexValue: string,
 ): Promise<CustomColor> {
+  logger.dbWrite('custom_colors', { name, hexValue });
   const db = await getDatabase();
   const id = randomUUID();
   const now = new Date();
@@ -87,6 +94,7 @@ export async function createCustomColor(
  * Get all custom piss colors, ordered by newest first
  */
 export async function getCustomColors(): Promise<CustomColor[]> {
+  logger.dbRead('custom_colors');
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -105,6 +113,7 @@ export async function getCustomColors(): Promise<CustomColor[]> {
  * Delete a custom piss color by id
  */
 export async function deleteCustomColor(id: string): Promise<void> {
+  logger.dbWrite('custom_colors', { action: 'delete', id });
   const db = await getDatabase();
   await db.delete(customColors).where(eq(customColors.id, id));
 }

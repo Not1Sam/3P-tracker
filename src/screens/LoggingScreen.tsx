@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import {
   View,
   Text,
@@ -7,6 +8,8 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
@@ -48,6 +51,13 @@ interface LoggingScreenProps {
 export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+
+  useEffect(() => {
+    logger.ui('LoggingScreen opened', { type });
+    return () => {
+      logger.ui('LoggingScreen closed', { type });
+    };
+  }, [type]);
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
   const [smell, setSmell] = useState<SmellLevel | null>(null);
@@ -119,6 +129,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   };
 
   const handleSave = async () => {
+    logger.period('Save entry attempt', { type, typeId: selectedTypeId, colorId: selectedColorId, smell });
     setSaving(true);
     try {
       let result: { id: string; error?: string };
@@ -137,6 +148,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       }
 
       if (result.error) {
+        logger.periodAction('Save entry failed', { error: result.error });
         Alert.alert('Error', `Failed to save: ${result.error}`);
         setSaving(false);
         return;
@@ -152,6 +164,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         // Haptics not available — skip silently
       }
 
+      logger.periodAction('Save entry success', { type, id: result.id });
       setSaved(true);
       setLastSavedId(result.id);
       setToastMessage('✅ Logged!');
@@ -168,34 +181,41 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       }, 500);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Unknown error';
+      logger.periodAction('Save entry error', { error: message });
       Alert.alert('Error', `Failed to save: ${message}`);
       setSaving(false);
     }
   };
 
   const handleAddCustomType = async (name: string) => {
+    logger.period('Add custom type', { name });
     try {
       const newType = await createCustomType(name);
       setCustomTypes((prev) => [newType, ...prev]);
     } catch (e) {
+      logger.periodAction('Add custom type failed', { error: e });
       Alert.alert('Error', 'Failed to create custom type');
     }
   };
 
   const handleAddCustomColor = async (name: string) => {
+    logger.period('Add custom color', { name });
     // For custom colors, use a default grey hex — user can edit later
     try {
       const newColor = await createCustomColor(name, '#808080');
       setCustomColors((prev) => [newColor, ...prev]);
     } catch (e) {
+      logger.periodAction('Add custom color failed', { error: e });
       Alert.alert('Error', 'Failed to create custom color');
     }
   };
 
   const handleUndo = useCallback(async () => {
     if (!lastSavedId) return;
+    logger.period('Undo last log', { type, lastSavedId });
     const result = await undoLastLog(type, lastSavedId);
     if (result.success) {
+      logger.periodAction('Undo success', { type, id: lastSavedId });
       setUndoToast(true);
       setToastMessage('Entry removed');
       setTimeout(() => {
@@ -230,7 +250,10 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <Toast
         visible={showToast}
         message={toastMessage}
@@ -245,11 +268,12 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
       {/* Header row */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={onClose}
+          onPress={() => { logger.nav('Logging screen back press'); onClose(); }}
           style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Go back"
           accessibilityRole="button"
@@ -260,7 +284,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
           {type === 'poop' ? 'Log Poop' : 'Log Piss'}
         </Text>
         <TouchableOpacity
-          onPress={onClose}
+          onPress={() => { logger.nav('Logging screen close'); onClose(); }}
           style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Close"
           accessibilityRole="button"
@@ -288,15 +312,15 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         {type === 'poop' ? (
           <BristolTypeSelector
             selectedTypeId={selectedTypeId}
-            onSelect={setSelectedTypeId}
-            onAddCustom={() => setShowCustomDialog(true)}
+            onSelect={(id) => { logger.period('Poop type selected', { typeId: id }); setSelectedTypeId(id); }}
+            onAddCustom={() => { logger.ui('Open custom type dialog'); setShowCustomDialog(true); }}
             customTypes={customTypes}
           />
         ) : (
           <ColorSwatchSelector
             selectedColorId={selectedColorId}
-            onSelect={setSelectedColorId}
-            onAddCustom={() => setShowCustomDialog(true)}
+            onSelect={(id) => { logger.period('Piss color selected', { colorId: id }); setSelectedColorId(id); }}
+            onAddCustom={() => { logger.ui('Open custom color dialog'); setShowCustomDialog(true); }}
             customColors={customColors}
           />
         )}
@@ -306,7 +330,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       {type === 'piss' && (
         <View style={styles.smellSection}>
           <Text style={[styles.sectionLabel, { color: colors.text }]}>Smell</Text>
-          <SmellSelector selected={smell} onSelect={setSmell} />
+          <SmellSelector selected={smell} onSelect={(s) => { logger.period('Smell selected', { smell: s }); setSmell(s); }} />
         </View>
       )}
 
@@ -314,7 +338,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
       <View style={styles.commentSection}>
         <CommentField
           value={comment}
-          onChangeText={setComment}
+          onChangeText={(text) => { logger.input('Comment text changed'); setComment(text); }}
           placeholder={
             type === 'poop'
               ? 'Optional note about your poop...'
@@ -346,7 +370,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         title={type === 'poop' ? 'Add Custom Poop Type' : 'Add Custom Piss Color'}
       />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

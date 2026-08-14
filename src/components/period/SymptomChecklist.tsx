@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { SYMPTOM_OPTIONS } from '@/constants/period';
+import { logger } from '@/utils/logger';
 import type { Symptom } from '@/types/period';
 
 interface SymptomChecklistProps {
@@ -16,7 +17,9 @@ export function SymptomChecklist({
   const colors = useThemeColors();
 
   const toggleSymptom = (symptom: Symptom) => {
-    if (selected.includes(symptom)) {
+    const isRemoving = selected.includes(symptom);
+    logger.periodAction('Symptom toggled', { symptom, action: isRemoving ? 'deselected' : 'selected' });
+    if (isRemoving) {
       onSelect(selected.filter((s) => s !== symptom));
     } else {
       onSelect([...selected, symptom]);

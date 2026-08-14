@@ -16,6 +16,7 @@ import { FriendCard } from '@/components/social/FriendCard';
 import { FriendRequestCard } from '@/components/social/FriendRequestCard';
 import { Toast } from '@/components/common/Toast';
 import * as socialService from '@/services/social-service';
+import { logger } from '@/utils/logger';
 
 interface Friend {
   friend_id: string;
@@ -82,15 +83,23 @@ export function FriendListScreen() {
     fetchAllData();
   }, [fetchAllData]);
 
+  useEffect(() => {
+    logger.ui('Friend list screen opened');
+    return () => { logger.ui('Friend list screen closed'); };
+  }, []);
+
   const handleAcceptRequest = async (requestId: string) => {
+    logger.social('Accept friend request', { requestId });
     const accepted = receivedRequests.find((r) => r.id === requestId);
     setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
 
     const { error } = await socialService.acceptFriendRequest(requestId);
     if (error) {
+      logger.socialAction('Accept friend request failed', { error });
       showToast('Failed to accept request');
       if (accepted) setReceivedRequests((prev) => [accepted, ...prev]);
     } else {
+      logger.socialAction('Accept friend request success', { requestId });
       showToast('Friend request accepted!');
       fetchAllData();
       refreshPendingCount();
@@ -98,55 +107,67 @@ export function FriendListScreen() {
   };
 
   const handleRejectRequest = async (requestId: string) => {
+    logger.social('Reject friend request', { requestId });
     const rejected = receivedRequests.find((r) => r.id === requestId);
     setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
 
     const { error } = await socialService.rejectFriendRequest(requestId);
     if (error) {
+      logger.socialAction('Reject friend request failed', { error });
       showToast('Failed to reject request');
       if (rejected) setReceivedRequests((prev) => [rejected, ...prev]);
     } else {
+      logger.socialAction('Reject friend request success', { requestId });
       showToast('Friend request rejected');
       refreshPendingCount();
     }
   };
 
   const handleCancelRequest = async (requestId: string) => {
+    logger.social('Cancel friend request', { requestId });
     const cancelled = sentRequests.find((r) => r.id === requestId);
     setSentRequests((prev) => prev.filter((r) => r.id !== requestId));
 
     const { error } = await socialService.cancelFriendRequest(requestId, user!.id);
     if (error) {
+      logger.socialAction('Cancel friend request failed', { error });
       showToast('Failed to cancel request');
       if (cancelled) setSentRequests((prev) => [cancelled, ...prev]);
     } else {
+      logger.socialAction('Cancel friend request success', { requestId });
       showToast('Friend request cancelled');
     }
   };
 
   const handleRemoveFriend = async (friendId: string) => {
+    logger.social('Remove friend', { friendId });
     const removed = friends.find((f) => f.friend_id === friendId);
     setFriends((prev) => prev.filter((f) => f.friend_id !== friendId));
 
     const { error } = await socialService.removeFriend(user!.id, friendId);
     if (error) {
+      logger.socialAction('Remove friend failed', { error });
       showToast('Failed to remove friend');
       if (removed) setFriends((prev) => [...prev, removed]);
     } else {
+      logger.socialAction('Remove friend success', { friendId });
       showToast('Friend removed');
       refreshPendingCount();
     }
   };
 
   const handleSelectUser = async (userId: string, username: string) => {
+    logger.social('Send friend request', { userId, username });
     setShowSearch(false);
 
     if (!user) return;
 
     const { error } = await socialService.sendFriendRequest(user.id, userId);
     if (error) {
+      logger.socialAction('Send friend request failed', { error });
       showToast(error);
     } else {
+      logger.socialAction('Send friend request success', { userId, username });
       showToast('Friend request sent to ' + username + '!');
       const sentData = await socialService.getPendingSentRequests(user.id);
       setSentRequests(sentData);
@@ -168,7 +189,7 @@ export function FriendListScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Friends</Text>
         <TouchableOpacity
           style={[styles.searchBtn, { backgroundColor: colors.surfaceVariant }]}
-          onPress={() => setShowSearch(true)}
+          onPress={() => { logger.ui('Friend search opened'); setShowSearch(true); }}
         >
           <Text style={[styles.searchBtnText, { color: colors.text }]}>&#128269;</Text>
         </TouchableOpacity>

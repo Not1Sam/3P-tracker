@@ -1,5 +1,6 @@
 import 'react-native-reanimated';
 import React, { useState, useEffect, useCallback } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -14,16 +15,13 @@ import { checkForUpdate } from '@/services/update-checker';
 import { syncLeaderboards } from '@/services/leaderboard-service';
 import { checkAutoBackup } from '@/services/backup-service';
 import { logger } from '@/utils/logger';
-import { SQLiteDatabase } from 'expo-sqlite';
 
 export default function RootLayout() {
   const [state, setState] = useState<{
-    db: SQLiteDatabase | null;
     showSplash: boolean;
     error: string | null;
     initialized: boolean;
   }>({
-    db: null,
     showSplash: true,
     error: null,
     initialized: false,
@@ -32,9 +30,8 @@ export default function RootLayout() {
   const initApp = useCallback(async () => {
     logger.appInit('RootLayout: initApp called');
     try {
-      const result = await initializeApp();
+      await initializeApp();
       setState({
-        db: result.db,
         showSplash: true,
         error: null,
         initialized: true,
@@ -94,37 +91,43 @@ export default function RootLayout() {
     if (state.error) {
       logger.appError('RootLayout: Showing error screen', { error: state.error });
       return (
-        <ThemeProvider>
-          <InitErrorScreen
-            error={state.error}
-            onRetry={handleRetry}
-            onReset={handleReset}
-          />
-        </ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <ThemeProvider>
+            <InitErrorScreen
+              error={state.error}
+              onRetry={handleRetry}
+              onReset={handleReset}
+            />
+          </ThemeProvider>
+        </GestureHandlerRootView>
       );
     }
     return (
-      <ThemeProvider>
-        <SplashScreen onFinish={handleSplashFinish} />
-      </ThemeProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider>
+          <SplashScreen onFinish={handleSplashFinish} />
+        </ThemeProvider>
+      </GestureHandlerRootView>
     );
   }
 
   logger.nav('RootLayout: Rendering main app');
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <NetworkProvider>
-            <OfflineBanner />
-            <PWAInstallHint />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="entry" options={{ headerShown: false }} />
-            </Stack>
-          </NetworkProvider>
-        </ProfileProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <NetworkProvider>
+              <OfflineBanner />
+              <PWAInstallHint />
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="entry" options={{ headerShown: false }} />
+              </Stack>
+            </NetworkProvider>
+          </ProfileProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

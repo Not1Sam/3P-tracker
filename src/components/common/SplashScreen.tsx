@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -23,6 +24,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   }));
 
   const handleFinish = useCallback(() => {
+    logger.ui('SplashScreen: splash_finish');
     onFinish();
   }, [onFinish]);
 

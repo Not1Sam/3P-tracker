@@ -31,6 +31,7 @@ import {
   getPeriodRemindersEnabled,
   setPeriodRemindersEnabled,
 } from '@/services/settings';
+import { logger } from '@/utils/logger';
 import type {
   FlowLevel,
   Symptom,
@@ -60,6 +61,7 @@ export default function PeriodScreen() {
 
   const loadData = useCallback(async () => {
     try {
+      logger.period('PeriodScreen: loading data');
       const [overview, phase, periodStats, entries] = await Promise.all([
         getCycleOverview(),
         getCyclePhase(),
@@ -70,8 +72,14 @@ export default function PeriodScreen() {
       setCurrentPhase(phase);
       setStats(periodStats);
       setRecentEntries(entries);
-    } catch {
-      // Silently handle — data will show empty states
+      logger.period('PeriodScreen: data loaded', {
+        hasOverview: !!overview,
+        hasPhase: !!phase,
+        hasStats: !!stats,
+        entryCount: entries.length,
+      });
+    } catch (e) {
+      logger.period('PeriodScreen: data load failed', { error: e });
     }
   }, []);
 
@@ -81,6 +89,7 @@ export default function PeriodScreen() {
   }, [loadData]);
 
   const handleLogPeriod = async () => {
+    logger.periodAction('Period log button pressed');
     const result = await logPeriodEntry({});
     if (result.id) {
       setLastLoggedId(result.id);
@@ -94,6 +103,7 @@ export default function PeriodScreen() {
   };
 
   const handleFlowSelect = async (level: FlowLevel | null) => {
+    logger.periodAction('Flow level updated', { level });
     setFlowLevel(level);
     if (lastLoggedId) {
       await updatePeriodEntry(lastLoggedId, { flowLevel: level ?? undefined });
@@ -101,6 +111,7 @@ export default function PeriodScreen() {
   };
 
   const handleSymptomsSelect = async (selected: Symptom[]) => {
+    logger.periodAction('Symptoms updated', { symptoms: selected });
     setSymptoms(selected);
     if (lastLoggedId) {
       await updatePeriodEntry(lastLoggedId, { symptoms: selected });
@@ -108,6 +119,7 @@ export default function PeriodScreen() {
   };
 
   const handleMoodSelect = async (selected: Mood | null) => {
+    logger.periodAction('Mood updated', { mood: selected });
     setMood(selected);
     if (lastLoggedId) {
       await updatePeriodEntry(lastLoggedId, { mood: selected ?? undefined });
@@ -115,9 +127,13 @@ export default function PeriodScreen() {
   };
 
   const handleToggleReminders = async (value: boolean) => {
+    logger.periodAction('Period reminders toggled', { enabled: value });
     if (value) {
       const granted = await requestNotificationPermission();
-      if (!granted) return;
+      if (!granted) {
+        logger.period('Notification permission denied');
+        return;
+      }
     }
     setPeriodRemindersEnabled(value);
     setRemindersEnabled(value);

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { MOOD_OPTIONS } from '@/constants/period';
+import { logger } from '@/utils/logger';
 import type { Mood } from '@/types/period';
 
 interface MoodSelectorProps {
@@ -31,7 +32,11 @@ export function MoodSelector({ selected, onSelect }: MoodSelectorProps) {
                     backgroundColor: colors.surface,
                   },
             ]}
-            onPress={() => onSelect(isSelected ? null : option.value)}
+            onPress={() => {
+              const newValue = isSelected ? null : option.value;
+              logger.periodAction('Mood selected', { mood: newValue });
+              onSelect(newValue);
+            }}
             accessibilityLabel={`Mood: ${option.label}`}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}

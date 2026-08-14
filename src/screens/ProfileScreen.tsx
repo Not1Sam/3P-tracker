@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { Avatar } from '@/components/social/Avatar';
 import { generateInviteCode } from '@/services/social-service';
 import { exportBackup } from '@/services/backup-service';
 import { hapticMedium } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 
 export function ProfileScreen() {
   const colors = useThemeColors();
@@ -31,12 +32,20 @@ export function ProfileScreen() {
   const [showFriendList, setShowFriendList] = useState(false);
   const [showInviteQR, setShowInviteQR] = useState(false);
 
+  useEffect(() => {
+    logger.ui('Profile screen opened', { isAuthenticated });
+    return () => { logger.ui('Profile screen closed'); };
+  }, []);
+
   const handleAuthSuccess = () => {
+    logger.auth('Auth modal closed after success');
     setShowAuthModal(false);
   };
 
   const handleSignOut = async () => {
+    logger.auth('Sign out initiated');
     await signOut();
+    logger.auth('Sign out completed');
   };
 
   // Loading state
@@ -62,6 +71,7 @@ export function ProfileScreen() {
         <TouchableOpacity
           style={[styles.authButton, { backgroundColor: colors.primary }]}
           onPress={() => {
+            logger.ui('Auth modal opened (login view)');
             setAuthView('login');
             setShowAuthModal(true);
           }}
@@ -72,6 +82,7 @@ export function ProfileScreen() {
         <TouchableOpacity
           style={[styles.registerButton, { borderColor: colors.border }]}
           onPress={() => {
+            logger.ui('Auth modal opened (register view)');
             setAuthView('register');
             setShowAuthModal(true);
           }}
@@ -125,7 +136,7 @@ export function ProfileScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={() => setShowFriendList(true)}
+          onPress={() => { logger.ui('Friend list opened'); setShowFriendList(true); }}
         >
           <View style={styles.actionRow}>
             <Text style={[styles.actionButtonText, { color: colors.textInverse }]}>
@@ -144,6 +155,7 @@ export function ProfileScreen() {
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.primary }]}
           onPress={async () => {
+            logger.ui('Invite QR opened');
             // If no invite code yet, generate one first
             if (!inviteCode && user) {
               const { code, error } = await generateInviteCode(user.id);
@@ -165,6 +177,7 @@ export function ProfileScreen() {
           style={[styles.actionButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
           onPress={async () => {
             hapticMedium();
+            logger.backup('Export backup initiated');
             await exportBackup();
           }}
         >

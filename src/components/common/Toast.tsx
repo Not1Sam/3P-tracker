@@ -6,6 +6,7 @@ import {
   Animated,
   StyleSheet,
 } from 'react-native';
+import { logger } from '@/utils/logger';
 
 interface ToastProps {
   visible: boolean;
@@ -27,6 +28,7 @@ export function Toast({
 
   useEffect(() => {
     if (visible) {
+      logger.ui(`Toast shown: ${message}`);
       // Slide in
       Animated.timing(translateY, {
         toValue: 0,

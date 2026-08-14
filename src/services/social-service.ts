@@ -1,10 +1,65 @@
 import { supabase } from '@/services/supabase-client';
+import { logger } from '@/utils/logger';
+
+const FRIEND_REQUEST_HOURLY_LIMIT = 5;
+const FRIEND_REQUEST_DAILY_LIMIT = 20;
+const MAX_FRIENDS = 50;
+
+/**
+ * Check if user has exceeded friend request rate limits.
+ */
+async function checkFriendRequestLimits(userId: string): Promise<{ allowed: boolean; error?: string }> {
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  // Check hourly limit
+  const { count: hourlyCount } = await supabase
+    .from('friend_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', userId)
+    .gte('created_at', oneHourAgo.toISOString());
+
+  if ((hourlyCount ?? 0) >= FRIEND_REQUEST_HOURLY_LIMIT) {
+    return { allowed: false, error: `Friend request limit reached (${FRIEND_REQUEST_HOURLY_LIMIT}/hour)` };
+  }
+
+  // Check daily limit
+  const { count: dailyCount } = await supabase
+    .from('friend_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', userId)
+    .gte('created_at', oneDayAgo.toISOString());
+
+  if ((dailyCount ?? 0) >= FRIEND_REQUEST_DAILY_LIMIT) {
+    return { allowed: false, error: `Daily friend request limit reached (${FRIEND_REQUEST_DAILY_LIMIT}/day)` };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Check if user has reached the friend cap.
+ */
+async function checkFriendCap(userId: string): Promise<{ allowed: boolean; error?: string }> {
+  const { count } = await supabase
+    .from('friends')
+    .select('user_id', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  if ((count ?? 0) >= MAX_FRIENDS) {
+    return { allowed: false, error: `Friend limit reached (${MAX_FRIENDS} max)` };
+  }
+
+  return { allowed: true };
+}
 
 /**
  * Get list of friends for a user.
  * Returns array of { friend_id, username }.
  */
 export async function getFriends(userId: string): Promise<{ friend_id: string; username: string }[]> {
+  logger.social('Fetching friends', { userId });
   try {
     const { data, error } = await supabase
       .from('friends')
@@ -14,12 +69,15 @@ export async function getFriends(userId: string): Promise<{ friend_id: string; u
 
     if (error) throw error;
 
-    return (data ?? []).map((row: any) => ({
+    const friends = (data ?? []).map((row: any) => ({
       friend_id: row.friend_id,
       username: row.profiles?.username ?? 'unknown',
     }));
+    logger.social('Friends fetched', { count: friends.length });
+    return friends;
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to get friends';
+    logger.error('SOCIAL', 'Failed to fetch friends', { userId, error: message });
     throw new Error(message);
   }
 }
@@ -29,6 +87,7 @@ export async function getFriends(userId: string): Promise<{ friend_id: string; u
  * Returns array of { id, sender_id, username }.
  */
 export async function getPendingReceivedRequests(userId: string): Promise<{ id: string; sender_id: string; username: string }[]> {
+  logger.social('Fetching pending received requests', { userId });
   try {
     const { data, error } = await supabase
       .from('friend_requests')
@@ -39,13 +98,16 @@ export async function getPendingReceivedRequests(userId: string): Promise<{ id: 
 
     if (error) throw error;
 
-    return (data ?? []).map((row: any) => ({
+    const requests = (data ?? []).map((row: any) => ({
       id: row.id,
       sender_id: row.sender_id,
       username: row.profiles?.username ?? 'unknown',
     }));
+    logger.social('Pending received requests fetched', { count: requests.length });
+    return requests;
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to get pending received requests';
+    logger.error('SOCIAL', 'Failed to fetch pending received requests', { userId, error: message });
     throw new Error(message);
   }
 }
@@ -55,6 +117,7 @@ export async function getPendingReceivedRequests(userId: string): Promise<{ id: 
  * Returns array of { id, receiver_id, username }.
  */
 export async function getPendingSentRequests(userId: string): Promise<{ id: string; receiver_id: string; username: string }[]> {
+  logger.social('Fetching pending sent requests', { userId });
   try {
     const { data, error } = await supabase
       .from('friend_requests')
@@ -65,38 +128,58 @@ export async function getPendingSentRequests(userId: string): Promise<{ id: stri
 
     if (error) throw error;
 
-    return (data ?? []).map((row: any) => ({
+    const requests = (data ?? []).map((row: any) => ({
       id: row.id,
       receiver_id: row.receiver_id,
       username: row.profiles?.username ?? 'unknown',
     }));
+    logger.social('Pending sent requests fetched', { count: requests.length });
+    return requests;
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to get pending sent requests';
+    logger.error('SOCIAL', 'Failed to fetch pending sent requests', { userId, error: message });
     throw new Error(message);
   }
 }
 
 /**
  * Send a friend request from senderId to receiverId.
- * Checks if already friends before inserting.
+ * Checks rate limits, friend cap, and if already friends before inserting.
  */
 export async function sendFriendRequest(
   senderId: string,
   receiverId: string,
 ): Promise<{ error: string | null }> {
   try {
+    // Check rate limits
+    const rateCheck = await checkFriendRequestLimits(senderId);
+    if (!rateCheck.allowed) {
+      logger.warn('SOCIAL', rateCheck.error!);
+      return { error: rateCheck.error ?? null };
+    }
+
+    // Check friend cap
+    const capCheck = await checkFriendCap(senderId);
+    if (!capCheck.allowed) {
+      logger.warn('SOCIAL', capCheck.error!);
+      return { error: capCheck.error ?? null };
+    }
+
     // Check if already friends
     const alreadyFriends = await areFriends(senderId, receiverId);
     if (alreadyFriends) {
+      logger.social('Already friends with this user', { senderId, receiverId });
       return { error: 'Already friends' };
     }
 
     // Check if there's already a pending request between these users
     const hasPending = await hasPendingRequest(senderId, receiverId);
     if (hasPending) {
+      logger.social('Friend request already pending', { senderId, receiverId });
       return { error: 'Friend request already pending' };
     }
 
+    logger.socialAction('Sending friend request', { senderId, receiverId });
     const { error } = await supabase.from('friend_requests').insert({
       sender_id: senderId,
       receiver_id: receiverId,
@@ -104,9 +187,11 @@ export async function sendFriendRequest(
     });
 
     if (error) throw error;
+    logger.social('Friend request sent', { senderId, receiverId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to send friend request';
+    logger.error('SOCIAL', 'Failed to send friend request', { senderId, receiverId, error: message });
     return { error: message };
   }
 }
@@ -115,6 +200,7 @@ export async function sendFriendRequest(
  * Accept a friend request. Creates symmetric friendship (both directions).
  */
 export async function acceptFriendRequest(requestId: string): Promise<{ error: string | null }> {
+  logger.socialAction('Accepting friend request', { requestId });
   try {
     // Get the request
     const { data: request, error: fetchError } = await supabase
@@ -142,9 +228,11 @@ export async function acceptFriendRequest(requestId: string): Promise<{ error: s
 
     if (deleteError) throw deleteError;
 
+    logger.social('Friend request accepted', { requestId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to accept friend request';
+    logger.error('SOCIAL', 'Failed to accept friend request', { requestId, error: message });
     return { error: message };
   }
 }
@@ -153,6 +241,7 @@ export async function acceptFriendRequest(requestId: string): Promise<{ error: s
  * Reject a friend request.
  */
 export async function rejectFriendRequest(requestId: string): Promise<{ error: string | null }> {
+  logger.socialAction('Rejecting friend request', { requestId });
   try {
     const { error } = await supabase
       .from('friend_requests')
@@ -160,9 +249,11 @@ export async function rejectFriendRequest(requestId: string): Promise<{ error: s
       .eq('id', requestId);
 
     if (error) throw error;
+    logger.social('Friend request rejected', { requestId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to reject friend request';
+    logger.error('SOCIAL', 'Failed to reject friend request', { requestId, error: message });
     return { error: message };
   }
 }
@@ -174,6 +265,7 @@ export async function cancelFriendRequest(
   requestId: string,
   senderId: string,
 ): Promise<{ error: string | null }> {
+  logger.socialAction('Cancelling friend request', { requestId, senderId });
   try {
     const { error } = await supabase
       .from('friend_requests')
@@ -182,9 +274,11 @@ export async function cancelFriendRequest(
       .eq('sender_id', senderId);
 
     if (error) throw error;
+    logger.social('Friend request cancelled', { requestId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to cancel friend request';
+    logger.error('SOCIAL', 'Failed to cancel friend request', { requestId, error: message });
     return { error: message };
   }
 }
@@ -196,6 +290,7 @@ export async function removeFriend(
   userId: string,
   friendId: string,
 ): Promise<{ error: string | null }> {
+  logger.socialAction('Removing friend', { userId, friendId });
   try {
     // Delete both directions
     const { error: error1 } = await supabase
@@ -214,9 +309,11 @@ export async function removeFriend(
 
     if (error2) throw error2;
 
+    logger.social('Friend removed', { userId, friendId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to remove friend';
+    logger.error('SOCIAL', 'Failed to remove friend', { userId, friendId, error: message });
     return { error: message };
   }
 }
@@ -278,6 +375,7 @@ export function getInviteUrl(code: string): string {
 export async function generateInviteCode(
   userId: string,
 ): Promise<{ code: string; error: string | null }> {
+  logger.social('Generating invite code', { userId });
   try {
     // Delete existing unused codes for this user (per D-26: regenerate invalidates old ones)
     const { error: deleteError } = await supabase
@@ -301,9 +399,11 @@ export async function generateInviteCode(
 
     if (insertError) throw insertError;
 
+    logger.socialAction('Invite code generated', { userId });
     return { code: data.code, error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to generate invite code';
+    logger.error('SOCIAL', 'Failed to generate invite code', { userId, error: message });
     return { code: '', error: message };
   }
 }
@@ -314,6 +414,7 @@ export async function generateInviteCode(
 export async function getActiveInviteCode(
   userId: string,
 ): Promise<{ code: string | null; error: string | null }> {
+  logger.db('Fetching active invite code', { userId });
   try {
     const { data, error } = await supabase
       .from('invite_codes')
@@ -326,9 +427,12 @@ export async function getActiveInviteCode(
 
     if (error) throw error;
 
+    const hasCode = data?.code != null;
+    logger.db('Active invite code fetched', { hasCode });
     return { code: data?.code ?? null, error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to get active invite code';
+    logger.dbError('Failed to fetch active invite code', { userId, error: message });
     return { code: null, error: message };
   }
 }
@@ -339,6 +443,7 @@ export async function getActiveInviteCode(
 export async function validateInviteCode(
   code: string,
 ): Promise<{ invite: { id: string; user_id: string } | null; error: string | null }> {
+  logger.db('Validating invite code', { code });
   try {
     const { data, error } = await supabase
       .from('invite_codes')
@@ -349,9 +454,12 @@ export async function validateInviteCode(
 
     if (error) throw error;
 
+    const valid = data != null;
+    logger.db('Invite code validation result', { valid });
     return { invite: data, error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to validate invite code';
+    logger.dbError('Failed to validate invite code', { code, error: message });
     return { invite: null, error: message };
   }
 }
@@ -364,6 +472,7 @@ export async function processInvite(
   code: string,
   newUserId: string,
 ): Promise<{ error: string | null }> {
+  logger.socialAction('Processing invite', { code, newUserId });
   try {
     // Validate the invite code
     const { invite, error: validateError } = await validateInviteCode(code);
@@ -382,9 +491,11 @@ export async function processInvite(
     const { error: requestError } = await sendFriendRequest(newUserId, invite.user_id);
     if (requestError) throw new Error(requestError);
 
+    logger.social('Invite processed successfully', { code, newUserId });
     return { error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to process invite';
+    logger.error('SOCIAL', 'Failed to process invite', { code, newUserId, error: message });
     return { error: message };
   }
 }
@@ -396,5 +507,6 @@ export async function processInvite(
 export async function regenerateInviteCode(
   userId: string,
 ): Promise<{ code: string; error: string | null }> {
+  logger.social('Regenerating invite code', { userId });
   return generateInviteCode(userId);
 }

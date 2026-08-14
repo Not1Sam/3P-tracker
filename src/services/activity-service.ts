@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabase-client';
 import { getCurrentUser } from '@/services/auth-service';
+import { logger } from '@/utils/logger';
 
 export interface ActivityItem {
   id: string;
@@ -18,8 +19,12 @@ export async function recordMilestone(
   message: string,
 ): Promise<{ error: string | null }> {
   const user = await getCurrentUser();
-  if (!user) return { error: 'Not authenticated' };
+  if (!user) {
+    logger.dbError('Cannot record milestone: not authenticated');
+    return { error: 'Not authenticated' };
+  }
 
+  logger.db('Recording milestone', { type, message });
   try {
     const { error } = await supabase.from('activity_feed').insert({
       user_id: user.id,
@@ -28,9 +33,12 @@ export async function recordMilestone(
     } as any);
 
     if (error) throw error;
+    logger.db('Milestone recorded', { type, message });
     return { error: null };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Failed to record milestone' };
+    const message2 = e instanceof Error ? e.message : 'Failed to record milestone';
+    logger.dbError('Failed to record milestone', { type, error: message2 });
+    return { error: message2 };
   }
 }
 
@@ -42,6 +50,7 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
   const user = await getCurrentUser();
   if (!user) return [];
 
+  logger.db('Fetching friend activity', { limit });
   try {
     // Get friend IDs
     const { data: friends } = await supabase
@@ -51,7 +60,10 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
 
     const friendIds = friends?.map((f: any) => f.friend_id) ?? [];
 
-    if (friendIds.length === 0) return [];
+    if (friendIds.length === 0) {
+      logger.db('No friends found, returning empty activity');
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('activity_feed')
@@ -62,7 +74,7 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
 
     if (error) throw error;
 
-    return (data ?? []).map((row: any) => ({
+    const activity = (data ?? []).map((row: any) => ({
       id: row.id,
       userId: row.user_id,
       username: row.profiles?.username ?? 'unknown',
@@ -70,7 +82,10 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
       message: row.message,
       createdAt: row.created_at,
     }));
-  } catch {
+    logger.db('Friend activity fetched', { count: activity.length });
+    return activity;
+  } catch (e) {
+    logger.dbError('Failed to fetch friend activity', { error: e instanceof Error ? e.message : 'Unknown' });
     return [];
   }
 }

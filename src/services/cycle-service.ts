@@ -15,6 +15,7 @@ import {
   DEFAULT_CYCLE_LENGTH,
   MIN_CYCLES_FOR_PREDICTION,
 } from '@/constants/period';
+import { logger } from '@/utils/logger';
 
 /**
  * Extract unique period start dates from raw logs.
@@ -22,6 +23,7 @@ import {
  * Returns dates sorted ascending (oldest first).
  */
 export function extractPeriodStartDates(logs: PeriodLogEntry[]): Date[] {
+  logger.period('Extracting period start dates', { logCount: logs.length });
   if (logs.length === 0) return [];
 
   // Sort by timestamp ascending
@@ -46,6 +48,7 @@ export function extractPeriodStartDates(logs: PeriodLogEntry[]): Date[] {
   }
   starts.push(currentStart); // Push last cluster
 
+  logger.period('Period start dates extracted', { count: starts.length });
   return starts;
 }
 
@@ -58,6 +61,7 @@ export function calculateCycleLengths(startDates: Date[]): number[] {
     const diffMs = startDates[i].getTime() - startDates[i - 1].getTime();
     lengths.push(Math.round(diffMs / (1000 * 60 * 60 * 24)));
   }
+  logger.period('Cycle lengths calculated', { count: lengths.length, lengths });
   return lengths;
 }
 
@@ -67,6 +71,7 @@ export function calculateCycleLengths(startDates: Date[]): number[] {
  * Confidence based on data quantity (D-12, D-13).
  */
 export function calculateCycleData(logs: PeriodLogEntry[]): CycleData {
+  logger.period('Calculating cycle data', { logCount: logs.length });
   const startDates = extractPeriodStartDates(logs);
   const cycleLengths = calculateCycleLengths(startDates);
 
@@ -90,6 +95,7 @@ export function calculateCycleData(logs: PeriodLogEntry[]): CycleData {
 
   // No logs → default 28-day cycle with null prediction
   if (startDates.length === 0) {
+    logger.period('No period logs, returning default cycle data');
     return {
       cycleStartDates: [],
       cycleLengths: [],
@@ -125,6 +131,12 @@ export function calculateCycleData(logs: PeriodLogEntry[]): CycleData {
     ),
     confidence,
   };
+  logger.period('Cycle data calculated', {
+    cycleStartDates: startDates.length,
+    averageCycleLength,
+    confidence,
+    nextPeriodPrediction: recentCycles.length >= MIN_CYCLES_FOR_PREDICTION,
+  });
 }
 
 /**
@@ -137,36 +149,36 @@ export function getCyclePhase(
 ): CyclePhase {
   const ovulationDay = Math.round(averageCycleLength / 2);
   const lutealStart = ovulationDay + 2;
+  let phase: CyclePhase;
 
   if (cycleDay <= 5) {
     const info = CYCLE_PHASES.menstrual;
-    return { name: 'menstrual', ...info };
-  }
-
-  if (cycleDay < ovulationDay - 1) {
+    phase = { name: 'menstrual', ...info };
+  } else if (cycleDay < ovulationDay - 1) {
     const info = CYCLE_PHASES.follicular;
-    return {
+    phase = {
       name: 'follicular',
       ...info,
       dayRange: `Days 6–${ovulationDay - 1}`,
     };
-  }
-
-  if (cycleDay <= ovulationDay + 2) {
+  } else if (cycleDay <= ovulationDay + 2) {
     const info = CYCLE_PHASES.ovulation;
-    return {
+    phase = {
       name: 'ovulation',
       ...info,
       dayRange: `Days ${ovulationDay}–${ovulationDay + 2}`,
     };
+  } else {
+    const info = CYCLE_PHASES.luteal;
+    phase = {
+      name: 'luteal',
+      ...info,
+      dayRange: `Days ${lutealStart}–${averageCycleLength}`,
+    };
   }
 
-  const info = CYCLE_PHASES.luteal;
-  return {
-    name: 'luteal',
-    ...info,
-    dayRange: `Days ${lutealStart}–${averageCycleLength}`,
-  };
+  logger.period('Cycle phase determined', { cycleDay, phase: phase.name });
+  return phase;
 }
 
 /**
@@ -174,10 +186,12 @@ export function getCyclePhase(
  * Includes regularity assessment based on standard deviation.
  */
 export function calculatePeriodStats(logs: PeriodLogEntry[]): PeriodStats {
+  logger.period('Calculating period stats', { logCount: logs.length });
   const startDates = extractPeriodStartDates(logs);
   const cycleLengths = calculateCycleLengths(startDates);
 
   if (cycleLengths.length === 0) {
+    logger.period('No cycle data, returning default stats');
     return {
       averageCycleLength: DEFAULT_CYCLE_LENGTH,
       averagePeriodDuration: 0,
@@ -243,7 +257,7 @@ export function calculatePeriodStats(logs: PeriodLogEntry[]): PeriodStats {
   else if (stdDev < 7) regularity = 'Somewhat irregular';
   else regularity = 'Irregular';
 
-  return {
+  const stats = {
     averageCycleLength,
     averagePeriodDuration,
     shortestCycle: Math.min(...cycleLengths),
@@ -251,4 +265,6 @@ export function calculatePeriodStats(logs: PeriodLogEntry[]): PeriodStats {
     totalCycles: cycleLengths.length,
     regularity,
   };
+  logger.period('Period stats calculated', { totalCycles: stats.totalCycles, regularity: stats.regularity });
+  return stats;
 }

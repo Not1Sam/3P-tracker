@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 interface LoginScreenProps {
   onSwitchToRegister: () => void;
@@ -29,7 +30,13 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    logger.ui('Login screen opened');
+    return () => { logger.ui('Login screen closed'); };
+  }, []);
+
   const handleLogin = async () => {
+    logger.authLogin('Login attempt');
     if (!email.trim() || !password.trim()) {
       setError('Please fill in all fields');
       return;
@@ -42,8 +49,10 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
     setLoading(false);
 
     if (result.error) {
+      logger.authError('Login failed', { error: result.error });
       setError(result.error);
     } else {
+      logger.auth('Login success');
       onSuccess();
     }
   };
@@ -77,7 +86,7 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => { logger.input('Login email input'); setEmail(text); }}
               placeholder="your@email.com"
               placeholderTextColor={colors.textTertiary}
               keyboardType="email-address"
@@ -92,7 +101,7 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => { logger.input('Login password input'); setPassword(text); }}
               placeholder="Enter password"
               placeholderTextColor={colors.textTertiary}
               secureTextEntry
@@ -101,7 +110,7 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
           </View>
 
           <TouchableOpacity
-            onPress={onForgotPassword}
+            onPress={() => { logger.ui('Forgot password pressed'); onForgotPassword(); }}
             disabled={loading}
             style={styles.forgotPassword}
           >
@@ -130,7 +139,7 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
 
           <TouchableOpacity
             style={[styles.secondaryButton, { borderColor: colors.border }]}
-            onPress={onSwitchToRegister}
+            onPress={() => { logger.auth('Switched to register from login'); onSwitchToRegister(); }}
             disabled={loading}
           >
             <Text style={[styles.secondaryButtonText, { color: colors.text }]}>

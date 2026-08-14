@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, type ReactNode } from 'react';
 import { useNetworkState } from '@/services/network-state';
+import { logger } from '@/utils/logger';
 
 interface NetworkContextValue {
   isConnected: boolean;
@@ -21,6 +22,8 @@ interface NetworkProviderProps {
 
 export function NetworkProvider({ children }: NetworkProviderProps) {
   const { isConnected, isInternetReachable } = useNetworkState();
+
+  logger.sync('NetworkProvider state', { isConnected, isInternetReachable });
 
   return (
     <NetworkContext.Provider value={{ isConnected, isInternetReachable }}>

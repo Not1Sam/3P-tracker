@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface OfflineBannerProps {
   onRetry?: () => void;
@@ -15,6 +16,7 @@ export function OfflineBanner({ onRetry }: OfflineBannerProps) {
 
   useEffect(() => {
     if (!isConnected && !visible) {
+      logger.ui('OfflineBanner: network_offline');
       setVisible(true);
       Animated.timing(translateY, {
         toValue: 0,
@@ -22,6 +24,7 @@ export function OfflineBanner({ onRetry }: OfflineBannerProps) {
         useNativeDriver: true,
       }).start();
     } else if (isConnected && visible) {
+      logger.ui('OfflineBanner: network_online');
       Animated.timing(translateY, {
         toValue: -60,
         duration: 200,
@@ -42,7 +45,7 @@ export function OfflineBanner({ onRetry }: OfflineBannerProps) {
     >
       <Text style={[styles.text, { color: colors.text }]}>Offline — data saved locally</Text>
       {onRetry && (
-        <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+        <TouchableOpacity onPress={() => { logger.uiAction('OfflineBanner: retry'); onRetry(); }} style={styles.retryButton}>
           <Text style={[styles.retryText, { color: colors.text }]}>Retry</Text>
         </TouchableOpacity>
       )}

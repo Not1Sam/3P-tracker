@@ -5,6 +5,7 @@ import { getPissColor, getPissColorHex } from '@/constants/color-palette';
 import { formatEntryTime } from '@/utils/date-helpers';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { AnimatedCard } from '@/components/common/AnimatedCard';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface EntryCardProps {
@@ -15,6 +16,11 @@ interface EntryCardProps {
 
 export function EntryCard({ entry, type, onPress }: EntryCardProps) {
   const colors = useThemeColors();
+
+  const handlePress = () => {
+    logger.inputAction('Entry card tapped', { type, entryId: entry.id });
+    onPress();
+  };
   const timeStr = formatEntryTime(entry.timestamp);
 
   const renderIndicator = () => {
@@ -71,7 +77,7 @@ export function EntryCard({ entry, type, onPress }: EntryCardProps) {
   return (
     <AnimatedCard
       style={[styles.card, { backgroundColor: colors.surface }]}
-      onPress={onPress}
+      onPress={handlePress}
     >
       <View
         accessibilityLabel={accessibilityText}

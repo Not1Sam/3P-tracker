@@ -8,6 +8,7 @@ import {
   resetPassword as resetPasswordFn,
   onAuthStateChange,
 } from '@/services/auth-service';
+import { logger } from '@/utils/logger';
 
 interface AuthContextValue {
   user: User | null;
@@ -29,38 +30,59 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  logger.auth('AuthProvider mounted');
+
   useEffect(() => {
     // Get initial session
     getCurrentUser().then((u) => {
       setUser(u);
       setLoading(false);
+      logger.auth('Initial session loaded', { userId: u?.id ?? 'none' });
     });
 
     // Listen for auth changes
     const unsubscribe = onAuthStateChange((u) => {
       setUser(u);
       setLoading(false);
+      logger.auth('Auth state changed', { userId: u?.id ?? 'signedOut' });
     });
 
     return () => unsubscribe();
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
+    logger.auth('Sign up attempted', { email });
     const result = await signUpFn(email, password);
+    if (result.error) {
+      logger.authError('Sign up failed', { error: result.error });
+    } else {
+      logger.authRegister();
+    }
     return { error: result.error };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    logger.auth('Sign in attempted', { email });
     const result = await signInFn(email, password);
+    if (result.error) {
+      logger.authError('Sign in failed', { error: result.error });
+    } else {
+      logger.authLogin('email');
+    }
     return { error: result.error };
   }, []);
 
   const signOut = useCallback(async () => {
+    logger.auth('Sign out attempted');
     const result = await signOutFn();
+    if (!result.error) {
+      logger.authLogout();
+    }
     return result;
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
+    logger.auth('Password reset requested', { email });
     const result = await resetPasswordFn(email);
     return result;
   }, []);

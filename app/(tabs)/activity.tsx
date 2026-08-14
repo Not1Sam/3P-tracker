@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { getFriendActivity, type ActivityItem } from '@/services/activity-service';
 import { EmptyState } from '@/components/common/EmptyState';
 import { SkeletonList } from '@/components/common/Skeleton';
 import { AnimatedListItem } from '@/components/common/AnimatedList';
 import { formatDistanceToNow } from 'date-fns';
+import { logger } from '@/utils/logger';
 
 export default function ActivityScreen() {
   const colors = useThemeColors();
@@ -18,14 +19,22 @@ export default function ActivityScreen() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
-    const data = await getFriendActivity();
-    setItems(data);
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      logger.sync('activityLoad', { refresh: isRefresh });
+      const data = await getFriendActivity();
+      setItems(data);
+      logger.sync('activityLoadComplete', { count: data.length });
+    } catch (error) {
+      logger.error('SYNC', 'activityLoadFailed', { error: String(error) });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      logger.navScreen('activity');
       loadActivity();
     }, [loadActivity])
   );
@@ -44,7 +53,10 @@ export default function ActivityScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => loadActivity(true)} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => {
+            logger.uiAction('activityRefresh');
+            loadActivity(true);
+          }} />
         }
         contentContainerStyle={items.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface InitErrorScreenProps {
   error: string;
@@ -25,7 +26,7 @@ export function InitErrorScreen({ error, onRetry, onReset }: InitErrorScreenProp
 
       <TouchableOpacity
         style={[styles.retryButton, { backgroundColor: colors.primary }]}
-        onPress={onRetry}
+        onPress={() => { logger.uiAction('InitErrorScreen: retry', { error }); onRetry(); }}
         accessibilityLabel="Try again"
         accessibilityRole="button"
       >
@@ -34,7 +35,7 @@ export function InitErrorScreen({ error, onRetry, onReset }: InitErrorScreenProp
 
       <TouchableOpacity
         style={[styles.resetButton, { borderColor: colors.error }]}
-        onPress={onReset}
+        onPress={() => { logger.uiAction('InitErrorScreen: reset_all_data', { error }); onReset(); }}
         accessibilityLabel="Reset all data"
         accessibilityRole="button"
       >

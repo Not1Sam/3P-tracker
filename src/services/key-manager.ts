@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import { logger } from '@/utils/logger';
 
 const KEY_STORAGE_KEY = 'db_encryption_key';
 
@@ -37,15 +38,19 @@ async function retrieveEncryptionKey(): Promise<string | null> {
  * This is the main export - call this to get the key for database initialization.
  */
 export async function getEncryptionKey(): Promise<string> {
+  logger.db('Retrieving encryption key');
   const existingKey = await retrieveEncryptionKey();
 
   if (existingKey) {
+    logger.db('Encryption key retrieved from SecureStore');
     return existingKey;
   }
 
   // First launch - generate and store a new key
+  logger.db('No existing key found, generating new encryption key');
   const newKey = generateEncryptionKey();
   await storeEncryptionKey(newKey);
+  logger.db('New encryption key generated and stored');
   return newKey;
 }
 
@@ -55,5 +60,7 @@ export async function getEncryptionKey(): Promise<string> {
  */
 export async function hasEncryptionKey(): Promise<boolean> {
   const key = await retrieveEncryptionKey();
-  return key !== null;
+  const exists = key !== null;
+  logger.db('Checking encryption key existence', { exists });
+  return exists;
 }

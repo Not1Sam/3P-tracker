@@ -13,6 +13,7 @@ import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar } from '@/components/social/Avatar';
 import * as profileService from '@/services/profile-service';
+import { logger } from '@/utils/logger';
 
 interface SearchModalProps {
   visible: boolean;
@@ -48,14 +49,17 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
       return;
     }
 
+    logger.uiAction('SearchModal: search_query', { query: searchQuery.trim() });
     setLoading(true);
     try {
       const data = await profileService.searchUsers(searchQuery.trim());
       setResults(data);
       setSearched(true);
+      logger.uiAction('SearchModal: search_results', { count: data.length });
     } catch {
       setResults([]);
       setSearched(true);
+      logger.uiError('SearchModal: search_failed', { query: searchQuery.trim() });
     } finally {
       setLoading(false);
     }
@@ -91,7 +95,7 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
         <View style={[styles.modal, { backgroundColor: colors.surface }]}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>Find Friends</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity onPress={() => { logger.uiAction('SearchModal: close'); onClose(); }} style={styles.closeBtn}>
               <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -111,7 +115,7 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
       <View style={[styles.modal, { backgroundColor: colors.surface }]}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Find Friends</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+          <TouchableOpacity onPress={() => { logger.uiAction('SearchModal: close'); onClose(); }} style={styles.closeBtn}>
             <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
           </TouchableOpacity>
         </View>
@@ -144,6 +148,7 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
                 style={[styles.resultItem, { borderBottomColor: colors.borderLight }]}
                 onPress={() => {
                   Keyboard.dismiss();
+                  logger.uiAction('SearchModal: select_user', { userId: item.id, username: item.username });
                   onSelectUser(item.id, item.username);
                 }}
               >

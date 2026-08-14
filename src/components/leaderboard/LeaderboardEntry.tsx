@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Avatar } from '@/components/social/Avatar';
 import { StreakBadge } from './StreakBadge';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { LeaderboardEntry as LeaderboardEntryType } from '@/services/leaderboard-service';
 
 interface LeaderboardEntryProps {
@@ -12,6 +13,8 @@ interface LeaderboardEntryProps {
 
 export function LeaderboardEntry({ entry, rank }: LeaderboardEntryProps) {
   const colors = useThemeColors();
+
+  logger.leaderboard(`LeaderboardEntry rendered`, { rank, username: entry.username, score: entry.score });
 
   return (
     <View

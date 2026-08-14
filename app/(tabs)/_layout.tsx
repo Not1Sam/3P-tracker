@@ -2,9 +2,12 @@ import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
+import { getUserGender } from '@/services/settings';
 
 export default function TabLayout() {
   const colors = useThemeColors();
+  const gender = getUserGender();
+  const showPeriodTab = gender === 'female';
 
   return (
     <Tabs
@@ -107,6 +110,7 @@ export default function TabLayout() {
             <MaterialCommunityIcons name="water" size={size} color={color} />
           ),
           tabBarActiveTintColor: colors.period,
+          href: showPeriodTab ? undefined : null,
         }}
       />
     </Tabs>

@@ -17,6 +17,7 @@ import { SMELL_OPTIONS } from '@/constants/smell-options';
 import { EditEntryModal } from '@/screens/EditEntryModal';
 import { Toast } from '@/components/common/Toast';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 interface EntryDetailScreenProps {
@@ -48,10 +49,13 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
   }, [id, type]);
 
   useEffect(() => {
+    logger.ui('Entry detail screen opened', { id, type });
     loadEntry();
-  }, [loadEntry]);
+    return () => { logger.ui('Entry detail screen closed', { id, type }); };
+  }, [loadEntry, id, type]);
 
   const handleDelete = async () => {
+    logger.period('Delete entry', { id, type });
     await deleteEntryWithUndo(
       id,
       type,
@@ -180,7 +184,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => { logger.nav('Entry detail back'); router.back(); }}
           style={[styles.headerButton, { backgroundColor: colors.surfaceVariant }]}
           accessibilityLabel="Go back"
           accessibilityRole="button"
@@ -192,7 +196,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
         </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            onPress={() => setShowEditModal(true)}
+            onPress={() => { logger.ui('Edit entry pressed', { id }); setShowEditModal(true); }}
             style={styles.headerAction}
             accessibilityLabel="Edit entry"
             accessibilityRole="button"

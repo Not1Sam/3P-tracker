@@ -2,6 +2,7 @@ import { eq, desc, asc, and, gte, lte, count } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { periodLogs } from '@/db/schema';
+import { logger } from '@/utils/logger';
 import type { PeriodLogInput, PeriodLogEntry, FlowLevel, Mood } from '@/types/period';
 
 /**
@@ -41,6 +42,7 @@ function mapRowToEntry(
 export async function createPeriodLog(
   input: PeriodLogInput,
 ): Promise<string> {
+  logger.dbWrite('period_logs', { flowLevel: input.flowLevel, mood: input.mood, hasSymptoms: !!input.symptoms });
   const db = await getDatabase();
   const id = randomUUID();
   const now = new Date();
@@ -67,6 +69,7 @@ export async function createPeriodLog(
 export async function getPeriodLogs(
   limit = 100,
 ): Promise<PeriodLogEntry[]> {
+  logger.dbRead('period_logs', { limit });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -85,6 +88,7 @@ export async function getPeriodLogsByDateRange(
   start: Date,
   end: Date,
 ): Promise<PeriodLogEntry[]> {
+  logger.dbRead('period_logs', { action: 'byDateRange', start: start.toISOString(), end: end.toISOString() });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -101,6 +105,7 @@ export async function getPeriodLogsByDateRange(
 export async function getPeriodLogById(
   id: string,
 ): Promise<PeriodLogEntry | undefined> {
+  logger.dbRead('period_logs', { action: 'getById', id });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -121,6 +126,7 @@ export async function updatePeriodLog(
   id: string,
   fields: Partial<PeriodLogInput>,
 ): Promise<void> {
+  logger.dbWrite('period_logs', { action: 'update', id, fields: Object.keys(fields) });
   const db = await getDatabase();
   await db
     .update(periodLogs)
@@ -138,6 +144,7 @@ export async function updatePeriodLog(
  * Delete a period log entry by id.
  */
 export async function deletePeriodLog(id: string): Promise<void> {
+  logger.dbWrite('period_logs', { action: 'delete', id });
   const db = await getDatabase();
   await db.delete(periodLogs).where(eq(periodLogs.id, id));
 }
@@ -146,6 +153,7 @@ export async function deletePeriodLog(id: string): Promise<void> {
  * Get the total count of period log entries.
  */
 export async function getPeriodLogCount(): Promise<number> {
+  logger.dbRead('period_logs', { action: 'count' });
   const db = await getDatabase();
   const [result] = await db
     .select({ count: count() })

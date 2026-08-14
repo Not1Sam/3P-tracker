@@ -74,15 +74,21 @@ export interface Database {
         Row: {
           id: string;
           username: string;
+          role: string;
+          visibility: string;
           created_at: string;
         };
         Insert: {
           id: string;
           username: string;
+          role?: string;
+          visibility?: string;
           created_at?: string;
         };
         Update: {
           username?: string;
+          role?: string;
+          visibility?: string;
         };
         Relationships: [];
       };

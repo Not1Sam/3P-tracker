@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { Avatar } from '@/components/social/Avatar';
+import { logger } from '@/utils/logger';
 
 interface FriendRequestCardProps {
   requestId: string;
@@ -33,13 +34,13 @@ export function FriendRequestCard({
           <>
             <TouchableOpacity
               style={[styles.acceptBtn, { backgroundColor: colors.success }]}
-              onPress={() => onAccept(requestId)}
+              onPress={() => { logger.uiAction('FriendRequestCard: accept_request', { requestId }); onAccept(requestId); }}
             >
               <Text style={styles.acceptBtnText}>Accept</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.rejectBtn, { borderColor: colors.error }]}
-              onPress={() => onReject(requestId)}
+              onPress={() => { logger.uiAction('FriendRequestCard: reject_request', { requestId }); onReject(requestId); }}
             >
               <Text style={[styles.rejectBtnText, { color: colors.error }]}>Reject</Text>
             </TouchableOpacity>
@@ -47,7 +48,7 @@ export function FriendRequestCard({
         ) : (
           <TouchableOpacity
             style={[styles.cancelBtn, { borderColor: colors.border }]}
-            onPress={() => onCancel(requestId)}
+            onPress={() => { logger.uiAction('FriendRequestCard: cancel_request', { requestId }); onCancel(requestId); }}
           >
             <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>

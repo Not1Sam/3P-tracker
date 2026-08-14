@@ -9,6 +9,7 @@ import {
   themes,
 } from '@/constants/theme';
 import { getTheme, setTheme } from '@/services/settings';
+import { logger } from '@/utils/logger';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -30,16 +31,23 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
     return getTheme();
   });
 
+  logger.ui('ThemeProvider initialized', { mode });
+
   useEffect(() => {
     setTheme(mode);
   }, [mode]);
 
   const setMode = useCallback((newMode: ThemeMode) => {
+    logger.uiAction('Theme mode changed', { from: mode, to: newMode });
     setModeState(newMode);
   }, []);
 
   const toggleMode = useCallback(() => {
-    setModeState((prev) => (prev === 'playful' ? 'clinical' : 'playful'));
+    setModeState((prev) => {
+      const next = prev === 'playful' ? 'clinical' : 'playful';
+      logger.uiAction('Theme mode toggled', { from: prev, to: next });
+      return next;
+    });
   }, []);
 
   const value: ThemeContextValue = {

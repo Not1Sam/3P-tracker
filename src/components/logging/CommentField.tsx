@@ -10,6 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -34,7 +35,9 @@ export function CommentField({
 
   const handleToggle = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsCollapsed(!isCollapsed);
+    const newState = !isCollapsed;
+    logger.uiAction(`CommentField: ${newState ? 'collapse' : 'expand'}`);
+    setIsCollapsed(newState);
   };
 
   if (isCollapsed) {
@@ -56,7 +59,7 @@ export function CommentField({
       <TextInput
         style={[styles.textInput, { color: colors.text }]}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => { logger.uiAction('CommentField: text_input', { length: text.length }); onChangeText(text); }}
         placeholder={placeholder}
         placeholderTextColor={colors.textTertiary}
         multiline={true}

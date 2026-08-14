@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface EmptyStateProps {
   emoji: string;
@@ -10,6 +11,8 @@ interface EmptyStateProps {
 
 export function EmptyState({ emoji, title, subtitle }: EmptyStateProps) {
   const colors = useThemeColors();
+
+  logger.ui('EmptyState displayed', { title, subtitle });
 
   return (
     <View style={styles.container}>

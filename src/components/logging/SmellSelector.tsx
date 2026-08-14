@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SMELL_OPTIONS } from '@/constants/smell-options';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import type { SmellLevel } from '@/types/logging';
+import { logger } from '@/utils/logger';
 
 interface SmellSelectorProps {
   selected: SmellLevel | null;
@@ -15,8 +16,10 @@ export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
   const handlePress = (value: SmellLevel) => {
     // Toggle behavior: tap selected pill again to deselect
     if (selected === value) {
+      logger.uiAction('SmellSelector: deselect_smell', { value });
       onSelect(null);
     } else {
+      logger.uiAction('SmellSelector: select_smell', { value });
       onSelect(value);
     }
   };

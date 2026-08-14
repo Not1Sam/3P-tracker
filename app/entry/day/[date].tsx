@@ -13,6 +13,7 @@ import { EntryCard } from '@/components/history/EntryCard';
 import { Toast } from '@/components/common/Toast';
 import { SkeletonList } from '@/components/common/Skeleton';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
 export default function DayDetailScreen() {
@@ -26,18 +27,23 @@ export default function DayDetailScreen() {
   const [toastMessage, setToastMessage] = useState('');
   const [pendingUndo, setPendingUndo] = useState<(() => void) | null>(null);
 
-  // Parse date at noon to avoid timezone edge cases
   const dateObj = date ? new Date(date + 'T12:00:00') : new Date();
+
+  useEffect(() => {
+    logger.navScreen(`dayDetail: ${date}`);
+  }, [date]);
 
   const loadEntries = useCallback(async () => {
     if (!date) return;
     setLoading(true);
     try {
+      logger.dbRead('entriesForDate', { date });
       const result = await getEntriesForDate(dateObj);
       setPoopEntries(result.poop);
       setPissEntries(result.piss);
+      logger.dbRead('entriesForDateComplete', { date, poop: result.poop.length, piss: result.piss.length });
     } catch (error) {
-      console.error('Failed to load entries:', error);
+      logger.dbError('entriesForDateFailed', { date, error: String(error) });
     } finally {
       setLoading(false);
     }
@@ -48,10 +54,12 @@ export default function DayDetailScreen() {
   }, [loadEntries]);
 
   const handleEntryPress = (entry: PoopLogEntry | PissLogEntry, type: LogType) => {
+    logger.uiAction('dayEntryPress', { entryId: entry.id, logType: type, date });
     router.push(`/entry/${entry.id}?type=${type}`);
   };
 
   const handleDelete = (id: string, type: LogType) => {
+    logger.uiAction('dayEntryDelete', { entryId: id, logType: type, date });
     deleteEntryWithUndo(
       id,
       type,
@@ -67,10 +75,16 @@ export default function DayDetailScreen() {
   };
 
   const handleUndo = () => {
+    logger.uiAction('dayEntryUndo');
     if (pendingUndo) {
       pendingUndo();
       setPendingUndo(null);
     }
+  };
+
+  const handleBack = () => {
+    logger.uiAction('dayDetailBack');
+    router.back();
   };
 
   const formattedDate = formatDateHeader(dateObj);
@@ -79,7 +93,7 @@ export default function DayDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={styles.backButton}
           accessibilityLabel="Go back"
           accessibilityRole="button"

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface StreakBadgeProps {
   streak: number;
@@ -10,6 +11,8 @@ interface StreakBadgeProps {
 
 export function StreakBadge({ streak, size = 'md' }: StreakBadgeProps) {
   const colors = useThemeColors();
+
+  logger.leaderboard('StreakBadge rendered', { streak, size });
 
   if (streak === 0) {
     return null;

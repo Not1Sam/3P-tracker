@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
+  Platform,
   Text,
   TouchableOpacity,
   Animated,
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 const DISMISSAL_KEY = 'pwa-install-hint-dismissed';
 
@@ -16,29 +17,31 @@ export function PWAInstallHint() {
   const translateY = useRef(new Animated.Value(100)).current;
 
   useEffect(() => {
-    // Check if already dismissed
-    const dismissed = localStorage.getItem(DISMISSAL_KEY);
-    if (dismissed === 'true') return;
+    if (Platform.OS !== 'web') return;
 
-    // Check if running in standalone mode (already installed)
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true;
+    try {
+      const dismissed = localStorage.getItem(DISMISSAL_KEY);
+      if (dismissed === 'true') return;
 
-    if (!isStandalone) {
-      setVisible(true);
-      // Slide in from bottom
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
+
+      if (!isStandalone) {
+        logger.ui('PWA install hint shown');
+        setVisible(true);
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    } catch {}
   }, [translateY]);
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISSAL_KEY, 'true');
-    // Slide out
+    logger.uiAction('PWA install hint dismissed');
+    try { localStorage.setItem(DISMISSAL_KEY, 'true'); } catch {}
     Animated.timing(translateY, {
       toValue: 100,
       duration: 200,

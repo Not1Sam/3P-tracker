@@ -2,6 +2,7 @@ import React from 'react';
 import { FlatList, View, Text, StyleSheet } from 'react-native';
 import { LeaderboardEntry } from './LeaderboardEntry';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { LeaderboardEntry as LeaderboardEntryType } from '@/services/leaderboard-service';
 
 interface LeaderboardListProps {
@@ -11,6 +12,8 @@ interface LeaderboardListProps {
 
 export function LeaderboardList({ entries, startRank }: LeaderboardListProps) {
   const colors = useThemeColors();
+
+  logger.leaderboard('LeaderboardList rendered', { count: entries.length, startRank });
 
   return (
     <FlatList

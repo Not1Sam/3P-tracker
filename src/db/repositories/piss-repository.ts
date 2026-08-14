@@ -3,6 +3,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { pissLogs } from '@/db/schema';
+import { logger } from '@/utils/logger';
 import type {
   PissLogInput,
   PissLogEntry,
@@ -17,6 +18,7 @@ import type {
 export async function createPissLog(
   input: PissLogInput & { location?: CapturedLocation },
 ): Promise<string> {
+  logger.dbWrite('piss_logs', { colorId: input.colorId, smell: input.smell, hasLocation: !!input.location });
   const db = await getDatabase();
   const id = randomUUID();
   const now = new Date();
@@ -42,6 +44,7 @@ export async function createPissLog(
  * @param limit Maximum number of entries to return (default: 50)
  */
 export async function getPissLogs(limit = 50): Promise<PissLogEntry[]> {
+  logger.dbRead('piss_logs', { limit });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -69,6 +72,7 @@ export async function getPissLogs(limit = 50): Promise<PissLogEntry[]> {
 export async function getPissLogById(
   id: string,
 ): Promise<PissLogEntry | undefined> {
+  logger.dbRead('piss_logs', { action: 'getById', id });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -98,6 +102,7 @@ export async function getPissLogById(
  * Used for the undo feature
  */
 export async function deletePissLog(id: string): Promise<void> {
+  logger.dbWrite('piss_logs', { action: 'delete', id });
   const db = await getDatabase();
   await db.delete(pissLogs).where(eq(pissLogs.id, id));
 }
@@ -110,6 +115,7 @@ export async function getPissLogsByDateRange(
   start: Date,
   end: Date,
 ): Promise<PissLogEntry[]> {
+  logger.dbRead('piss_logs', { action: 'byDateRange', start: start.toISOString(), end: end.toISOString() });
   const db = await getDatabase();
   const rows = await db
     .select()
@@ -145,6 +151,7 @@ export async function getPissLogsByDate(
  * Get all piss log entries (for backup export)
  */
 export async function getAllPissLogs(): Promise<any[]> {
+  logger.dbRead('piss_logs', { action: 'getAllForBackup' });
   const db = await getDatabase();
   return db.select().from(pissLogs);
 }
@@ -153,6 +160,7 @@ export async function getAllPissLogs(): Promise<any[]> {
  * Insert a piss log entry (for backup import)
  */
 export async function insertPissLog(row: any): Promise<void> {
+  logger.dbWrite('piss_logs', { action: 'import' });
   const db = await getDatabase();
   await db.insert(pissLogs).values(row).onConflictDoNothing();
 }
@@ -161,6 +169,7 @@ export async function insertPissLog(row: any): Promise<void> {
  * Get count of piss logs in a date range (for leaderboard scoring)
  */
 export async function getPissLogsCount(start: Date, end: Date): Promise<number> {
+  logger.dbRead('piss_logs', { action: 'count' });
   const db = await getDatabase();
   const [{ result }] = await db
     .select({ result: count() })
@@ -173,6 +182,7 @@ export async function getPissLogsCount(start: Date, end: Date): Promise<number> 
  * Get all piss log timestamps since a cutoff date (for streak calculation)
  */
 export async function getPissLogsSince(cutoff: Date): Promise<Date[]> {
+  logger.dbRead('piss_logs', { action: 'since', cutoff: cutoff.toISOString() });
   const db = await getDatabase();
   const rows = await db
     .select({ timestamp: pissLogs.timestamp })
@@ -190,6 +200,7 @@ export async function updatePissLog(
   id: string,
   fields: { colorId?: number; smell?: SmellLevel; comment?: string },
 ): Promise<void> {
+  logger.dbWrite('piss_logs', { action: 'update', id, fields: Object.keys(fields) });
   const db = await getDatabase();
   await db
     .update(pissLogs)

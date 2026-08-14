@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 interface RegisterScreenProps {
   onSwitchToLogin: () => void;
@@ -29,7 +30,13 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    logger.ui('Register screen opened');
+    return () => { logger.ui('Register screen closed'); };
+  }, []);
+
   const handleRegister = async () => {
+    logger.authRegister();
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       setError('Please fill in all fields');
       return;
@@ -52,8 +59,10 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
     setLoading(false);
 
     if (result.error) {
+      logger.authError('Signup failed', { error: result.error });
       setError(result.error);
     } else {
+      logger.auth('Signup success');
       onSuccess();
     }
   };
@@ -87,7 +96,7 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => { logger.input('Register email input'); setEmail(text); }}
               placeholder="your@email.com"
               placeholderTextColor={colors.textTertiary}
               keyboardType="email-address"
@@ -102,7 +111,7 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => { logger.input('Register password input'); setPassword(text); }}
               placeholder="At least 6 characters"
               placeholderTextColor={colors.textTertiary}
               secureTextEntry
@@ -115,7 +124,7 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(text) => { logger.input('Register confirm password input'); setConfirmPassword(text); }}
               placeholder="Re-enter password"
               placeholderTextColor={colors.textTertiary}
               secureTextEntry
@@ -143,7 +152,7 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
 
           <TouchableOpacity
             style={[styles.secondaryButton, { borderColor: colors.border }]}
-            onPress={onSwitchToLogin}
+            onPress={() => { logger.auth('Switched to login from register'); onSwitchToLogin(); }}
             disabled={loading}
           >
             <Text style={[styles.secondaryButtonText, { color: colors.text }]}>

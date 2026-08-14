@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { Avatar } from '@/components/social/Avatar';
+import { logger } from '@/utils/logger';
 
 interface FriendCardProps {
   username: string;
@@ -13,6 +14,7 @@ export function FriendCard({ username, friendId, onRemove }: FriendCardProps) {
   const colors = useThemeColors();
 
   const handleRemove = () => {
+    logger.uiAction('FriendCard: remove_friend_prompt', { friendId, username });
     Alert.alert(
       'Remove Friend',
       `Remove ${username} from your friends?`,
@@ -21,7 +23,7 @@ export function FriendCard({ username, friendId, onRemove }: FriendCardProps) {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => onRemove(friendId),
+          onPress: () => { logger.uiAction('FriendCard: remove_friend_confirm', { friendId, username }); onRemove(friendId); },
         },
       ],
     );

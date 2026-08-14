@@ -10,6 +10,7 @@ import {
 import { useThemeColors } from '@/contexts/ThemeContext';
 import type { VersionInfo } from '@/services/update-checker';
 import { promptUpdate } from '@/services/update-checker';
+import { logger } from '@/utils/logger';
 
 interface UpdatePromptProps {
   versionInfo: VersionInfo | null;
@@ -22,6 +23,7 @@ export function UpdatePrompt({ versionInfo, onDismiss }: UpdatePromptProps) {
   if (!versionInfo) return null;
 
   const handleDownload = () => {
+    logger.uiAction('UpdatePrompt: update_accept', { version: versionInfo.version });
     promptUpdate(versionInfo);
     onDismiss();
   };
@@ -64,7 +66,7 @@ export function UpdatePrompt({ versionInfo, onDismiss }: UpdatePromptProps) {
 
           <TouchableOpacity
             style={styles.laterButton}
-            onPress={onDismiss}
+            onPress={() => { logger.uiAction('UpdatePrompt: update_dismiss', { version: versionInfo.version }); onDismiss(); }}
             accessibilityLabel="Dismiss update"
             accessibilityRole="button"
           >

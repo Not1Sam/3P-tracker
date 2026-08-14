@@ -22,6 +22,7 @@ import { supabase } from '@/services/supabase-client';
 import { getCurrentUser } from '@/services/auth-service';
 import { storage } from '@/services/settings';
 import { recordMilestone, checkStreakMilestone } from '@/services/activity-service';
+import { logger } from '@/utils/logger';
 
 export type LogType = 'poop' | 'piss';
 type BoardType = 'friends' | 'global';
@@ -87,9 +88,11 @@ export function getLastCacheTime(type: LogType, board: BoardType): number | null
  */
 export async function getPersonalScore(type: LogType): Promise<number> {
   const now = new Date();
-  return type === 'poop'
-    ? getPoopLogsCount(startOfMonth(now), endOfMonth(now))
-    : getPissLogsCount(startOfMonth(now), endOfMonth(now));
+  const score = type === 'poop'
+    ? await getPoopLogsCount(startOfMonth(now), endOfMonth(now))
+    : await getPissLogsCount(startOfMonth(now), endOfMonth(now));
+  logger.leaderboard('Personal score calculated', { type, score, month: now.getMonth() + 1, year: now.getFullYear() });
+  return score;
 }
 
 /**
@@ -97,6 +100,7 @@ export async function getPersonalScore(type: LogType): Promise<number> {
  * Counts consecutive days backwards from today, allowing 1 missing day per month.
  */
 export async function calculateStreak(type: LogType): Promise<number> {
+  logger.leaderboard('Calculating streak', { type });
   const now = startOfDay(new Date());
   const cutoff = subDays(now, 365);
 
@@ -142,6 +146,7 @@ export async function calculateStreak(type: LogType): Promise<number> {
     currentDay = subDays(currentDay, 1);
   }
 
+  logger.leaderboard('Streak calculated', { type, streak, graceDaysUsed });
   return streak;
 }
 
@@ -202,12 +207,15 @@ async function fetchFriendsLeaderboardFromSupabase(type: LogType): Promise<Leade
  * Always attempts Supabase fetch; falls back to MMKV cache on failure.
  */
 export async function getFriendsLeaderboard(type: LogType): Promise<LeaderboardEntry[]> {
+  logger.leaderboard('Fetching friends leaderboard', { type });
   try {
     const entries = await fetchFriendsLeaderboardFromSupabase(type);
     // Success: update cache with fresh data
     setCachedLeaderboard(type, 'friends', entries);
+    logger.leaderboard('Friends leaderboard fetched', { type, count: entries.length });
     return entries;
-  } catch {
+  } catch (e) {
+    logger.leaderboard('Friends leaderboard fetch failed, using cache', { type, error: e instanceof Error ? e.message : 'Unknown' });
     // Failure: return cached data or empty array
     return getCachedLeaderboard(type, 'friends') ?? [];
   }
@@ -259,12 +267,15 @@ async function fetchGlobalLeaderboardFromSupabase(type: LogType): Promise<Leader
  * Always attempts Supabase fetch; falls back to MMKV cache on failure.
  */
 export async function getGlobalLeaderboard(type: LogType): Promise<LeaderboardEntry[]> {
+  logger.leaderboard('Fetching global leaderboard', { type });
   try {
     const entries = await fetchGlobalLeaderboardFromSupabase(type);
     // Success: update cache with fresh data
     setCachedLeaderboard(type, 'global', entries);
+    logger.leaderboard('Global leaderboard fetched', { type, count: entries.length });
     return entries;
-  } catch {
+  } catch (e) {
+    logger.leaderboard('Global leaderboard fetch failed, using cache', { type, error: e instanceof Error ? e.message : 'Unknown' });
     // Failure: return cached data or empty array
     return getCachedLeaderboard(type, 'global') ?? [];
   }
@@ -283,8 +294,10 @@ export interface SyncResult {
  * Skips silently if offline.
  */
 export async function syncLeaderboards(): Promise<SyncResult> {
+  logger.leaderboard('Starting leaderboard sync');
   const netState = await NetInfo.fetch();
   if (!netState.isConnected || !netState.isInternetReachable) {
+    logger.leaderboard('Offline, skipping leaderboard sync');
     return { synced: false, timestamp: Date.now() };
   }
 
@@ -303,6 +316,13 @@ export async function syncLeaderboards(): Promise<SyncResult> {
     if (globalPoop.status === 'fulfilled') setCachedLeaderboard('poop', 'global', globalPoop.value);
     if (globalPiss.status === 'fulfilled') setCachedLeaderboard('piss', 'global', globalPiss.value);
 
+    logger.leaderboard('Leaderboard data synced', {
+      friendsPoop: friendsPoop.status,
+      friendsPiss: friendsPiss.status,
+      globalPoop: globalPoop.status,
+      globalPiss: globalPiss.status,
+    });
+
     // Check for streak milestones and record them to activity feed
     try {
       const [poopStreak, pissStreak] = await Promise.all([
@@ -313,14 +333,22 @@ export async function syncLeaderboards(): Promise<SyncResult> {
       const poopMilestone = checkStreakMilestone(poopStreak);
       const pissMilestone = checkStreakMilestone(pissStreak);
 
-      if (poopMilestone) await recordMilestone('streak_milestone', poopMilestone);
-      if (pissMilestone) await recordMilestone('streak_milestone', pissMilestone);
-    } catch {
-      // Silently ignore milestone check failures
+      if (poopMilestone) {
+        await recordMilestone('streak_milestone', poopMilestone);
+        logger.leaderboard('Poop streak milestone recorded', { streak: poopStreak });
+      }
+      if (pissMilestone) {
+        await recordMilestone('streak_milestone', pissMilestone);
+        logger.leaderboard('Piss streak milestone recorded', { streak: pissStreak });
+      }
+    } catch (e) {
+      logger.leaderboard('Milestone check failed (non-critical)', { error: e instanceof Error ? e.message : 'Unknown' });
     }
 
+    logger.leaderboardAction('Leaderboard sync completed');
     return { synced: true, timestamp: Date.now() };
-  } catch {
+  } catch (e) {
+    logger.error('LEADERBOARD', 'Leaderboard sync failed', { error: e instanceof Error ? e.message : 'Unknown' });
     return { synced: false, timestamp: Date.now() };
   }
 }

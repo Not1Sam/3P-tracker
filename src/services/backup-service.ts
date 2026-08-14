@@ -4,6 +4,7 @@ import { getAllPissLogs, insertPissLog } from '@/db/repositories/piss-repository
 import { getAllCustomTypes, insertCustomType } from '@/db/repositories/custom-type-repository';
 import { storage } from '@/services/settings';
 import * as Sharing from 'expo-sharing';
+import { logger } from '@/utils/logger';
 
 interface BackupData {
   version: 1;
@@ -21,6 +22,7 @@ function cleanRow(row: any): any {
 }
 
 export async function exportBackup(): Promise<{ uri: string | null; error: string | null }> {
+  logger.backupAction('Export backup started');
   try {
     // Export non-period data only (D-09: period never leaves device)
     const [poop, piss, customs] = await Promise.all([
@@ -51,26 +53,32 @@ export async function exportBackup(): Promise<{ uri: string | null; error: strin
     const uri = `${FileSystem.documentDirectory}${filename}`;
 
     await FileSystem.writeAsStringAsync(uri, json);
+    logger.backup('Backup file written', { filename, poopCount: poop.length, pissCount: piss.length, customCount: customs.length });
 
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, {
         mimeType: 'application/json',
         dialogTitle: 'Export 3P Tracker Backup',
       });
+      logger.backupAction('Backup shared via system dialog');
     }
 
+    logger.backupAction('Export backup completed', { uri });
     return { uri, error: null };
   } catch (e) {
+    logger.backupError('Export backup failed', { error: e instanceof Error ? e.message : 'Export failed' });
     return { uri: null, error: e instanceof Error ? e.message : 'Export failed' };
   }
 }
 
 export async function importBackup(uri: string): Promise<{ imported: boolean; error: string | null }> {
+  logger.backupAction('Import backup started', { uri });
   try {
     const json = await FileSystem.readAsStringAsync(uri);
     const backup: BackupData = JSON.parse(json);
 
     if (backup.version !== 1) {
+      logger.backupError('Unsupported backup version', { version: backup.version });
       return { imported: false, error: 'Unsupported backup version' };
     }
 
@@ -79,25 +87,31 @@ export async function importBackup(uri: string): Promise<{ imported: boolean; er
       for (const [key, val] of Object.entries(backup.settings)) {
         storage.set(key, val);
       }
+      logger.backup('Settings restored', { keys: Object.keys(backup.settings).length });
     }
 
     // Restore poop logs
     for (const row of backup.poopLogs) {
       await insertPoopLog(row);
     }
+    logger.backup('Poop logs restored', { count: backup.poopLogs.length });
 
     // Restore piss logs
     for (const row of backup.pissLogs) {
       await insertPissLog(row);
     }
+    logger.backup('Piss logs restored', { count: backup.pissLogs.length });
 
     // Restore custom types
     for (const row of backup.customTypes) {
       await insertCustomType(row);
     }
+    logger.backup('Custom types restored', { count: backup.customTypes.length });
 
+    logger.backupAction('Import backup completed');
     return { imported: true, error: null };
   } catch (e) {
+    logger.backupError('Import backup failed', { error: e instanceof Error ? e.message : 'Import failed' });
     return { imported: false, error: e instanceof Error ? e.message : 'Import failed' };
   }
 }
@@ -106,11 +120,18 @@ export async function checkAutoBackup(): Promise<void> {
   const lastBackup = storage.getNumber('lastAutoBackup') ?? 0;
   const now = Date.now();
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  const daysSinceBackup = Math.floor((now - lastBackup) / (24 * 60 * 60 * 1000));
+
+  logger.backup('Checking auto-backup', { daysSinceBackup, lastBackupTimestamp: lastBackup });
 
   if (now - lastBackup >= sevenDays) {
+    logger.backupAction('Auto-backup triggered');
     const { uri, error } = await exportBackup();
     if (!error && uri) {
       storage.set('lastAutoBackup', now);
+      logger.backup('Auto-backup completed', { uri });
+    } else {
+      logger.backupError('Auto-backup failed');
     }
   }
 }

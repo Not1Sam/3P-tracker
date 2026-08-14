@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import NetInfo from '@react-native-community/netinfo';
+import { logger } from '@/utils/logger';
 
 export interface NetworkState {
   /** Whether the device has any network connection (wifi, cellular, etc.) */
@@ -29,14 +30,20 @@ export function useNetworkState(): NetworkState {
   useEffect(() => {
     // Get initial state
     NetInfo.fetch().then((state) => {
-      setIsConnected(state.isConnected ?? false);
-      setIsInternetReachable(state.isInternetReachable ?? false);
+      const connected = state.isConnected ?? false;
+      const reachable = state.isInternetReachable ?? false;
+      setIsConnected(connected);
+      setIsInternetReachable(reachable);
+      logger.ui('Initial network state', { connected, reachable });
     });
 
     // Subscribe to changes
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsConnected(state.isConnected ?? false);
-      setIsInternetReachable(state.isInternetReachable ?? false);
+      const connected = state.isConnected ?? false;
+      const reachable = state.isInternetReachable ?? false;
+      setIsConnected(connected);
+      setIsInternetReachable(reachable);
+      logger.ui('Network state changed', { connected, reachable });
     });
 
     return () => unsubscribe();

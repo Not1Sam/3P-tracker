@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface LeaderboardToggleProps {
   value: 'friends' | 'global';
@@ -9,6 +10,11 @@ interface LeaderboardToggleProps {
 
 export function LeaderboardToggle({ value, onChange }: LeaderboardToggleProps) {
   const colors = useThemeColors();
+
+  const handleToggle = (newValue: 'friends' | 'global') => {
+    logger.leaderboardAction('Leaderboard toggle switched', { from: value, to: newValue });
+    onChange(newValue);
+  };
 
   return (
     <View style={styles.container}>
@@ -19,7 +25,7 @@ export function LeaderboardToggle({ value, onChange }: LeaderboardToggleProps) {
             backgroundColor: value === 'friends' ? colors.primary : colors.surface,
           },
         ]}
-        onPress={() => onChange('friends')}
+        onPress={() => handleToggle('friends')}
       >
         <Text
           style={[
@@ -39,7 +45,7 @@ export function LeaderboardToggle({ value, onChange }: LeaderboardToggleProps) {
             backgroundColor: value === 'global' ? colors.primary : colors.surface,
           },
         ]}
-        onPress={() => onChange('global')}
+        onPress={() => handleToggle('global')}
       >
         <Text
           style={[

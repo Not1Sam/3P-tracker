@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { CYCLE_PHASES } from '@/constants/period';
+import { logger } from '@/utils/logger';
 import type { CyclePhaseName } from '@/types/period';
 
 interface EducationCardsProps {
@@ -17,6 +18,8 @@ const PHASE_ORDER: CyclePhaseName[] = [
 
 export function EducationCards({ currentPhase }: EducationCardsProps) {
   const colors = useThemeColors();
+
+  logger.period('EducationCards rendered', { currentPhase });
 
   return (
     <ScrollView

@@ -1,10 +1,50 @@
-import { createMMKV } from 'react-native-mmkv';
+import * as SecureStore from 'expo-secure-store';
 import { type ThemeMode } from '@/constants/theme';
+import { logger } from '@/utils/logger';
 
-// Singleton MMKV instance for user settings
-export const storage = createMMKV({
-  id: 'user-settings',
-});
+// SecureStore-compatible wrapper with sync API (MMKV replacement)
+// expo-secure-store has getItemSync/setItemSync on native platforms
+export const storage = {
+  getString(key: string): string | undefined {
+    try {
+      return SecureStore.getItem(key) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  },
+  getNumber(key: string): number | undefined {
+    try {
+      const val = SecureStore.getItem(key);
+      if (val === null || val === undefined) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    } catch {
+      return undefined;
+    }
+  },
+  set(key: string, value: string | number | boolean): void {
+    try {
+      SecureStore.setItem(key, String(value));
+    } catch {}
+  },
+  delete(key: string): void {
+    try {
+      SecureStore.deleteItemAsync(key);
+    } catch {}
+  },
+  clearAll(): void {
+    // SecureStore doesn't support clearAll; we clear known keys
+    const keys = [
+      'theme', 'syncDayOfMonth', 'userName', 'userEmail',
+      'lastSyncTimestamp', 'lastAutoBackup',
+      'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
+      'inviteCode',
+    ];
+    for (const key of keys) {
+      try { SecureStore.deleteItemAsync(key); } catch {}
+    }
+  },
+};
 
 // Theme settings
 export function getTheme(): ThemeMode {
@@ -14,6 +54,7 @@ export function getTheme(): ThemeMode {
 
 export function setTheme(theme: ThemeMode): void {
   storage.set('theme', theme);
+  logger.uiAction('Theme changed', { theme });
 }
 
 // Sync settings
@@ -26,11 +67,12 @@ export function setLastSyncTimestamp(timestamp: number): void {
 }
 
 export function getSyncDayOfMonth(): number {
-  return storage.getNumber('syncDayOfMonth') ?? 1; // Default: 1st of each month
+  return storage.getNumber('syncDayOfMonth') ?? 1;
 }
 
 export function setSyncDayOfMonth(day: number): void {
   storage.set('syncDayOfMonth', day);
+  logger.uiAction('Sync day changed', { day });
 }
 
 // User settings
@@ -40,6 +82,7 @@ export function getUserName(): string | undefined {
 
 export function setUserName(name: string): void {
   storage.set('userName', name);
+  logger.uiAction('User name updated');
 }
 
 export function getUserEmail(): string | undefined {
@@ -48,6 +91,7 @@ export function getUserEmail(): string | undefined {
 
 export function setUserEmail(email: string): void {
   storage.set('userEmail', email);
+  logger.uiAction('User email updated');
 }
 
 // Period settings (D-39)
@@ -57,13 +101,14 @@ export function getPeriodRemindersEnabled(): boolean {
 
 export function setPeriodRemindersEnabled(enabled: boolean): void {
   storage.set('periodRemindersEnabled', enabled ? 'true' : 'false');
+  logger.uiAction('Period reminders toggled', { enabled });
 }
 
 export function getPeriodReminderTime(): { hour: number; minute: number } {
   const hour = storage.getNumber('periodReminderHour');
   const minute = storage.getNumber('periodReminderMinute');
   return {
-    hour: hour !== undefined ? hour : 9, // Default 9 AM
+    hour: hour !== undefined ? hour : 9,
     minute: minute !== undefined ? minute : 0,
   };
 }
@@ -71,4 +116,21 @@ export function getPeriodReminderTime(): { hour: number; minute: number } {
 export function setPeriodReminderTime(hour: number, minute: number): void {
   storage.set('periodReminderHour', hour);
   storage.set('periodReminderMinute', minute);
+  logger.uiAction('Period reminder time changed', { hour, minute });
+}
+
+// Gender settings (controls period tab visibility)
+export type UserGender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+
+export function getUserGender(): UserGender | undefined {
+  const stored = storage.getString('userGender');
+  if (stored === 'male' || stored === 'female' || stored === 'other' || stored === 'prefer_not_to_say') {
+    return stored;
+  }
+  return undefined;
+}
+
+export function setUserGender(gender: UserGender): void {
+  storage.set('userGender', gender);
+  logger.uiAction('User gender changed', { gender });
 }

@@ -8,6 +8,7 @@ import { DateSectionHeader } from '@/components/history/DateSectionHeader';
 import { Toast } from '@/components/common/Toast';
 import { SkeletonList } from '@/components/common/Skeleton';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 import type { DateSection } from '@/utils/date-helpers';
 
@@ -27,7 +28,7 @@ export function HistoryScreen() {
       const grouped = groupEntriesByDate(entries);
       setSections(grouped);
     } catch (error) {
-      console.error('Failed to load entries:', error);
+      logger.error('APP', 'Failed to load history entries', { error });
     } finally {
       setLoading(false);
     }
@@ -35,15 +36,18 @@ export function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      logger.ui('History screen focused');
       loadEntries();
     }, [loadEntries])
   );
 
   const handleEntryPress = (entry: PoopLogEntry | PissLogEntry, type: LogType) => {
+    logger.ui('History entry pressed', { id: entry.id, type });
     router.push(`/entry/${entry.id}?type=${type}`);
   };
 
   const handleDelete = (id: string, type: LogType) => {
+    logger.period('History entry delete', { id, type });
     deleteEntryWithUndo(
       id,
       type,

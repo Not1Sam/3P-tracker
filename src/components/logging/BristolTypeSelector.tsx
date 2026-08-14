@@ -9,6 +9,7 @@ import {
 import { BRISTOL_TYPES } from '@/constants/bristol-chart';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import type { CustomType } from '@/types/logging';
+import { logger } from '@/utils/logger';
 
 const BRISTOL_EMOJIS: Record<number, string> = {
   1: '🫘',
@@ -38,6 +39,7 @@ export function BristolTypeSelector({
   const handleLongPress = (typeId: number) => {
     const type = BRISTOL_TYPES.find((t) => t.id === typeId);
     if (type) {
+      logger.uiAction('BristolTypeSelector: long_press_type', { typeId });
       Alert.alert(
         `Bristol Type ${type.id}`,
         `${type.name}\n\n${type.description}\n\nClinical Reference: ${type.clinicalReference}`,
@@ -58,7 +60,7 @@ export function BristolTypeSelector({
                 ? [styles.cellSelected, { borderColor: colors.primary, backgroundColor: colors.primaryLight + '20' }]
                 : [styles.cellUnselected, { borderColor: colors.border, backgroundColor: colors.surface }],
             ]}
-            onPress={() => onSelect(type.id)}
+            onPress={() => { logger.uiAction('BristolTypeSelector: select_type', { typeId: type.id, name: type.name }); onSelect(type.id); }}
             onLongPress={() => handleLongPress(type.id)}
             accessibilityLabel={`Bristol type ${type.id}: ${type.name}`}
             accessibilityRole="button"
@@ -93,7 +95,7 @@ export function BristolTypeSelector({
 
       <TouchableOpacity
         style={[styles.cell, styles.addCell, { borderColor: colors.border, backgroundColor: colors.surfaceVariant }]}
-        onPress={onAddCustom}
+        onPress={() => { logger.uiAction('BristolTypeSelector: add_custom_type'); onAddCustom(); }}
         accessibilityLabel="Add Custom Type"
         accessibilityRole="button"
       >

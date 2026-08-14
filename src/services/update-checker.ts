@@ -1,5 +1,6 @@
 import * as Application from 'expo-application';
 import * as WebBrowser from 'expo-web-browser';
+import { logger } from '@/utils/logger';
 
 const VERSION_ENDPOINT = 'https://your-homelab.com/version.json';
 
@@ -16,9 +17,11 @@ export interface VersionInfo {
  * Silently returns null on any network/parse error.
  */
 export async function checkForUpdate(): Promise<VersionInfo | null> {
+  logger.ui('Checking for app updates');
   try {
     const response = await fetch(VERSION_ENDPOINT);
     if (!response.ok) {
+      logger.ui('Update check failed', { status: response.status });
       return null;
     }
 
@@ -31,18 +34,23 @@ export async function checkForUpdate(): Promise<VersionInfo | null> {
       typeof remote.downloadUrl !== 'string' ||
       typeof remote.releaseNotes !== 'string'
     ) {
+      logger.ui('Invalid version info format from server');
       return null;
     }
 
     const localBuild = parseInt(Application.nativeBuildVersion ?? '0', 10);
+    logger.ui('Version info fetched', { remote: remote.version, remoteBuild: remote.buildNumber, localBuild });
 
     if (remote.buildNumber > localBuild) {
+      logger.uiAction('Update available', { remote: remote.version, localBuild });
       return remote;
     }
 
+    logger.ui('App is up to date');
     return null;
-  } catch {
+  } catch (e) {
     // Network error or invalid JSON — silently skip
+    logger.ui('Update check skipped due to error', { error: e instanceof Error ? e.message : 'Unknown error' });
     return null;
   }
 }
@@ -51,5 +59,6 @@ export async function checkForUpdate(): Promise<VersionInfo | null> {
  * Open the download URL for an available update in the system browser.
  */
 export async function promptUpdate(info: VersionInfo): Promise<void> {
+  logger.uiAction('Opening update download page', { url: info.downloadUrl });
   await WebBrowser.openBrowserAsync(info.downloadUrl);
 }

@@ -5,6 +5,7 @@ import {
   getSyncableTables as getSyncableTablesConstant,
   canSync as canSyncConstant,
 } from '@/constants/privacy-tiers';
+import { logger } from '@/utils/logger';
 
 // Re-export the constants and functions for convenience
 export { DataTier, SYNCABLE_TABLES };
@@ -32,14 +33,16 @@ export const canSync = canSyncConstant;
  * Get tables that NEVER sync (Tier 1 - period data)
  */
 export function getNonSyncableTables(): string[] {
-  return ['period_logs'];
+  const tables = ['period_logs'];
+  logger.debug('SYNC', 'Non-syncable tables', { tables });
+  return tables;
 }
 
 /**
  * Get all tables in the database
  */
 export function getAllTables(): string[] {
-  return [
+  const tables = [
     'poop_logs',
     'piss_logs',
     'period_logs',
@@ -47,4 +50,6 @@ export function getAllTables(): string[] {
     'custom_colors',
     'user_settings',
   ];
+  logger.debug('SYNC', 'All database tables', { tables });
+  return tables;
 }

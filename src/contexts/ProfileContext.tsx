@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import { useAuth } from '@/contexts/AuthContext';
 import * as profileService from '@/services/profile-service';
 import * as socialService from '@/services/social-service';
+import { logger } from '@/utils/logger';
 
 interface Profile {
   id: string;
@@ -35,6 +36,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const [pendingReceivedCount, setPendingReceivedCount] = useState(0);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
+  logger.social('ProfileProvider mounted', { isAuthenticated });
+
   const refreshProfile = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setProfile(null);
@@ -43,15 +46,17 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
 
     try {
+      logger.social('Loading profile', { userId: user.id });
       const data = await profileService.getProfile(user.id);
       setProfile(data);
+      logger.social('Profile loaded', { username: data?.username });
 
       if (data) {
         const count = await profileService.getFriendCount(user.id);
         setFriendCount(count);
       }
-    } catch {
-      // Silently handle - profile may not exist yet
+    } catch (e) {
+      logger.social('Profile load failed (may not exist yet)', { error: e });
       setProfile(null);
     } finally {
       setLoading(false);
@@ -63,8 +68,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     try {
       const count = await profileService.getFriendCount(user.id);
       setFriendCount(count);
-    } catch {
-      // Ignore errors for friend count refresh
+    } catch (e) {
+      logger.social('Friend count refresh failed', { error: e });
     }
   }, [user]);
 
@@ -73,8 +78,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     try {
       const requests = await socialService.getPendingReceivedRequests(user.id);
       setPendingReceivedCount(requests.length);
-    } catch {
-      // Ignore errors for pending count refresh
+    } catch (e) {
+      logger.social('Pending count refresh failed', { error: e });
     }
   }, [user]);
 
@@ -83,8 +88,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     try {
       const { code } = await socialService.getActiveInviteCode(user.id);
       setInviteCode(code);
-    } catch {
-      // Ignore errors for invite code refresh
+    } catch (e) {
+      logger.social('Invite code refresh failed', { error: e });
     }
   }, [user]);
 

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { logger } from '@/utils/logger';
 
 type MarkedDateDot = {
   key: string;
@@ -58,21 +59,24 @@ export function CalendarScreen() {
 
       setMarkedDates(marks);
     } catch (error) {
-      console.error('Failed to load calendar data:', error);
+      logger.error('APP', 'Failed to load calendar data', { error });
     }
   }, [colors.poop, colors.piss]);
 
   useFocusEffect(
     useCallback(() => {
+      logger.ui('Calendar screen focused');
       loadCalendarData(currentMonth.year, currentMonth.month);
     }, [currentMonth, loadCalendarData])
   );
 
   const handleDayPress = (day: { dateString: string }) => {
+    logger.ui('Calendar day pressed', { date: day.dateString });
     router.push(`/entry/day/${day.dateString}`);
   };
 
   const handleMonthChange = (month: { year: number; month: number }) => {
+    logger.ui('Calendar month changed', { year: month.year, month: month.month });
     setCurrentMonth({ year: month.year, month: month.month });
   };
 

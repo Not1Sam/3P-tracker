@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { FLOW_LEVELS } from '@/constants/period';
+import { logger } from '@/utils/logger';
 import type { FlowLevel } from '@/types/period';
 
 interface FlowLevelSelectorProps {
@@ -34,7 +35,11 @@ export function FlowLevelSelector({
                     backgroundColor: colors.surface,
                   },
             ]}
-            onPress={() => onSelect(isSelected ? null : level.value)}
+            onPress={() => {
+              const newValue = isSelected ? null : level.value;
+              logger.periodAction('Flow level selected', { level: newValue });
+              onSelect(newValue);
+            }}
             accessibilityLabel={`Flow level: ${level.label}`}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}

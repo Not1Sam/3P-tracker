@@ -22,6 +22,7 @@ import type {
   LogType,
   SmellLevel,
 } from '@/types/logging';
+import { logger } from '@/utils/logger';
 
 /**
  * Get markedDates for calendar from a month's entries.
@@ -32,6 +33,7 @@ export async function getCalendarMarkedDates(
   year: number,
   month: number,
 ): Promise<{ poopDates: Set<string>; pissDates: Set<string> }> {
+  logger.db('Fetching calendar marked dates', { year, month });
   const start = startOfMonth(new Date(year, month));
   const end = endOfMonth(new Date(year, month));
 
@@ -40,10 +42,10 @@ export async function getCalendarMarkedDates(
     getPissLogsByDateRange(start, end),
   ]);
 
-  return {
-    poopDates: new Set(poopEntries.map((e) => toLocalDateString(e.timestamp))),
-    pissDates: new Set(pissEntries.map((e) => toLocalDateString(e.timestamp))),
-  };
+  const poopDates = new Set(poopEntries.map((e) => toLocalDateString(e.timestamp)));
+  const pissDates = new Set(pissEntries.map((e) => toLocalDateString(e.timestamp)));
+  logger.db('Calendar dates fetched', { poopCount: poopDates.size, pissCount: pissDates.size });
+  return { poopDates, pissDates };
 }
 
 /**
@@ -53,10 +55,12 @@ export async function getCalendarMarkedDates(
 export async function getEntriesForDate(
   date: Date,
 ): Promise<{ poop: PoopLogEntry[]; piss: PissLogEntry[] }> {
+  logger.db('Fetching entries for date', { date: date.toISOString() });
   const [poop, piss] = await Promise.all([
     getPoopLogsByDate(date),
     getPissLogsByDate(date),
   ]);
+  logger.db('Entries fetched', { poopCount: poop.length, pissCount: piss.length });
   return { poop, piss };
 }
 
@@ -69,6 +73,7 @@ export async function getEntriesPaginated(
   limit: number,
   offset: number,
 ): Promise<(PoopLogEntry | PissLogEntry)[]> {
+  logger.db('Fetching paginated entries', { limit, offset });
   const [poopEntries, pissEntries] = await Promise.all([
     getPoopLogsByDateRange(new Date(0), new Date()),
     getPissLogsByDateRange(new Date(0), new Date()),
@@ -79,7 +84,9 @@ export async function getEntriesPaginated(
     (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
   );
 
-  return all.slice(offset, offset + limit);
+  const result = all.slice(offset, offset + limit);
+  logger.db('Paginated entries fetched', { total: all.length, returned: result.length });
+  return result;
 }
 
 /**
@@ -90,10 +97,15 @@ export async function getEntryById(
   id: string,
   type: LogType,
 ): Promise<PoopLogEntry | PissLogEntry | undefined> {
+  logger.db('Fetching entry by id', { id, type });
+  let entry;
   if (type === 'poop') {
-    return getPoopLogById(id);
+    entry = await getPoopLogById(id);
+  } else {
+    entry = await getPissLogById(id);
   }
-  return getPissLogById(id);
+  logger.db('Entry fetch result', { id, found: entry != null });
+  return entry;
 }
 
 /**
@@ -111,6 +123,7 @@ export async function updateEntry(
     comment?: string;
   },
 ): Promise<void> {
+  logger.db('Updating entry', { id, type });
   if (type === 'poop') {
     await updatePoopLog(id, {
       typeId: fields.typeId,
@@ -123,6 +136,7 @@ export async function updateEntry(
       comment: fields.comment,
     });
   }
+  logger.db('Entry updated', { id, type });
 }
 
 /**
@@ -136,6 +150,8 @@ export async function deleteEntryWithUndo(
   toastCallback: (msg: string, onUndo: () => void) => void,
   refreshCallback: () => void,
 ): Promise<void> {
+  logger.db('Deleting entry with undo support', { id, type });
+
   // Fetch entry for potential undo re-creation
   const entry = await getEntryById(id, type);
 
@@ -146,10 +162,13 @@ export async function deleteEntryWithUndo(
     await deletePissLog(id);
   }
 
+  logger.db('Entry deleted', { id, type });
+
   // Show undo toast with 3-second window
   toastCallback('Entry deleted', async () => {
     // Undo: re-create the entry
     if (entry) {
+      logger.db('Undoing delete, re-creating entry', { id, type });
       if (type === 'poop') {
         const poopEntry = entry as PoopLogEntry;
         await createPoopLog({
@@ -178,6 +197,7 @@ export async function deleteEntryWithUndo(
             : undefined,
         });
       }
+      logger.db('Entry re-created (undo)', { id, type });
       refreshCallback();
     }
   });

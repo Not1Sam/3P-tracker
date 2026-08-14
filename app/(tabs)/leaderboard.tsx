@@ -6,6 +6,7 @@ import { getFriendsLeaderboard, getGlobalLeaderboard } from '@/services/leaderbo
 import { Podium } from '@/components/leaderboard/Podium';
 import { LeaderboardList } from '@/components/leaderboard/LeaderboardList';
 import { LeaderboardToggle } from '@/components/leaderboard/LeaderboardToggle';
+import { logger } from '@/utils/logger';
 import type { LeaderboardEntry } from '@/services/leaderboard-service';
 
 type ViewType = 'friends' | 'global';
@@ -21,13 +22,20 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  useEffect(() => {
+    logger.navScreen('leaderboard');
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
+      logger.leaderboardAction('fetch', { view, logType });
       const data = view === 'friends'
         ? await getFriendsLeaderboard(logType)
         : await getGlobalLeaderboard(logType);
       setEntries(data);
-    } catch {
+      logger.leaderboardAction('fetchComplete', { view, logType, count: data.length });
+    } catch (error) {
+      logger.leaderboardAction('fetchError', { view, logType, error: String(error) });
       setEntries([]);
     } finally {
       setLoading(false);
@@ -41,9 +49,15 @@ export default function LeaderboardScreen() {
   }, [fetchData]);
 
   const onRefresh = useCallback(() => {
+    logger.uiAction('leaderboardRefresh');
     setRefreshing(true);
     fetchData();
   }, [fetchData]);
+
+  const handleViewChange = useCallback((newView: ViewType) => {
+    logger.uiAction('leaderboardViewToggle', { from: view, to: newView });
+    setView(newView);
+  }, [view]);
 
   const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -66,7 +80,7 @@ export default function LeaderboardScreen() {
         <View style={styles.toggleRow}>
           <LeaderboardToggle
             value={view}
-            onChange={setView}
+            onChange={handleViewChange}
           />
         </View>
 

@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -24,22 +25,31 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const colors = useThemeColors();
 
+  if (visible) {
+    logger.ui('BottomSheet opened', { title });
+  }
+
+  const handleClose = () => {
+    logger.uiAction('BottomSheet closed', { title });
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
       transparent={true}
       animationType="slide"
       accessibilityViewIsModal={true}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback onPress={handleClose}>
         <View style={styles.backdrop}>
           <TouchableWithoutFeedback>
             <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
               {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
               <TouchableOpacity
                 style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
-                onPress={onClose}
+                onPress={handleClose}
                 accessibilityLabel="Close"
                 accessibilityRole="button"
               >

@@ -1,9 +1,10 @@
 import * as Location from 'expo-location';
-import { createPoopLog as repoCreatePoopLog } from '@/db/repositories/poop-repository';
-import { createPissLog as repoCreatePissLog } from '@/db/repositories/piss-repository';
+import { createPoopLog as repoCreatePoopLog, getPoopLogs } from '@/db/repositories/poop-repository';
+import { createPissLog as repoCreatePissLog, getPissLogs } from '@/db/repositories/piss-repository';
 import { deletePoopLog } from '@/db/repositories/poop-repository';
 import { deletePissLog } from '@/db/repositories/piss-repository';
 import { logger } from '@/utils/logger';
+import { canLogEntry, incrementDailyCount } from '@/utils/rate-limiter';
 import type {
   PoopLogInput,
   PissLogInput,
@@ -55,10 +56,23 @@ export async function createPoopLog(
   input: PoopLogInput,
 ): Promise<{ id: string; error?: string }> {
   logger.inputAction('Create poop log', input);
+
+  // Rate limit check
+  const recent = await getPoopLogs(1);
+  const lastTimestamp = recent[0]?.timestamp instanceof Date
+    ? recent[0].timestamp.toISOString()
+    : (recent[0]?.timestamp ?? null);
+  const check = canLogEntry('poop', lastTimestamp);
+  if (!check.allowed) {
+    logger.warn('INPUT', check.reason!);
+    return { id: '', error: check.reason };
+  }
+
   try {
     const captured = await captureLocation();
     const location = captured ?? undefined;
     const id = await repoCreatePoopLog({ ...input, location });
+    incrementDailyCount('poop');
     logger.dbWrite('poop_logs', { id, typeId: input.typeId });
     return { id };
   } catch (e) {
@@ -77,10 +91,23 @@ export async function createPissLog(
   input: PissLogInput,
 ): Promise<{ id: string; error?: string }> {
   logger.inputAction('Create piss log', input);
+
+  // Rate limit check
+  const recent = await getPissLogs(1);
+  const lastTimestamp = recent[0]?.timestamp instanceof Date
+    ? recent[0].timestamp.toISOString()
+    : (recent[0]?.timestamp ?? null);
+  const check = canLogEntry('piss', lastTimestamp);
+  if (!check.allowed) {
+    logger.warn('INPUT', check.reason!);
+    return { id: '', error: check.reason };
+  }
+
   try {
     const captured = await captureLocation();
     const location = captured ?? undefined;
     const id = await repoCreatePissLog({ ...input, location });
+    incrementDailyCount('piss');
     logger.dbWrite('piss_logs', { id, colorId: input.colorId });
     return { id };
   } catch (e) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Avatar } from '@/components/social/Avatar';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { LeaderboardEntry } from '@/services/leaderboard-service';
 
 interface PodiumProps {
@@ -44,6 +45,8 @@ function PodiumColumn({ entry, rank, height, medal }: PodiumColumnProps) {
 export function Podium({ entries }: PodiumProps) {
   // Filter out null/undefined entries
   const validEntries = entries.filter((e): e is LeaderboardEntry => e != null);
+
+  logger.leaderboard('Podium rendered', { entryCount: validEntries.length });
 
   // Pad to 3 entries
   const padded: (LeaderboardEntry | null)[] = [...validEntries];

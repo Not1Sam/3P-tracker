@@ -15,16 +15,29 @@ import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { createProfile } from '@/services/profile-service';
+import { setUserGender, type UserGender } from '@/services/settings';
 import { Avatar } from '@/components/social/Avatar';
+import { logger } from '@/utils/logger';
 
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+
+const GENDER_OPTIONS: { value: UserGender; label: string; emoji: string }[] = [
+  { value: 'female', label: 'Female', emoji: '♀️' },
+  { value: 'male', label: 'Male', emoji: '♂️' },
+  { value: 'other', label: 'Other', emoji: '⚧️' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say', emoji: '🤐' },
+];
+
+type Step = 'username' | 'gender';
 
 export function ProfileSetup() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { refreshProfile } = useProfile();
+  const [step, setStep] = useState<Step>('username');
   const [username, setUsername] = useState('');
+  const [selectedGender, setSelectedGender] = useState<UserGender | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,16 +46,19 @@ export function ProfileSetup() {
     return trimmed.length >= 3 ? trimmed : 'preview';
   }, [username]);
 
-  const handleCreate = async () => {
+  const handleCreateUsername = async () => {
     const normalized = username.toLowerCase().trim();
+    logger.uiAction('ProfileSetup: username_create_attempt', { username: normalized });
 
     if (!normalized) {
       setError('Please enter a username');
+      logger.uiError('ProfileSetup: username_validation_error', { reason: 'empty' });
       return;
     }
 
     if (!USERNAME_REGEX.test(normalized)) {
       setError('Username must be 3-20 characters: a-z, 0-9, _');
+      logger.uiError('ProfileSetup: username_validation_error', { reason: 'regex_fail' });
       return;
     }
 
@@ -54,12 +70,110 @@ export function ProfileSetup() {
     try {
       await createProfile(user.id, normalized);
       await refreshProfile();
+      logger.uiAction('ProfileSetup: username_created', { username: normalized });
+      setStep('gender');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to create profile';
       setError(message);
+      logger.uiError('ProfileSetup: username_create_failed', { error: message });
+    } finally {
       setLoading(false);
     }
   };
+
+  const handleGenderSelect = (gender: UserGender) => {
+    setSelectedGender(gender);
+    logger.uiAction('ProfileSetup: gender_select', { gender });
+  };
+
+  const handleGenderConfirm = () => {
+    if (selectedGender) {
+      logger.uiAction('ProfileSetup: gender_confirm', { gender: selectedGender });
+      setUserGender(selectedGender);
+    }
+  };
+
+  if (step === 'gender') {
+    return (
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Avatar username={previewUsername} size={96} />
+            <Text style={[styles.title, { color: colors.text }]}>What's your gender?</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              This helps us show you the right features
+            </Text>
+          </View>
+
+          <View style={styles.genderGrid}>
+            {GENDER_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.genderButton,
+                  {
+                    backgroundColor:
+                      selectedGender === option.value
+                        ? colors.primary + '20'
+                        : colors.surface,
+                    borderColor:
+                      selectedGender === option.value
+                        ? colors.primary
+                        : colors.border,
+                  },
+                ]}
+                onPress={() => { handleGenderSelect(option.value); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.genderEmoji}>{option.emoji}</Text>
+                <Text
+                  style={[
+                    styles.genderLabel,
+                    {
+                      color:
+                        selectedGender === option.value
+                          ? colors.primary
+                          : colors.text,
+                    },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: !selectedGender ? colors.disabled : colors.primary,
+              },
+            ]}
+            onPress={handleGenderConfirm}
+            disabled={!selectedGender}
+          >
+            <Text style={styles.buttonText}>Continue</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={() => {}}
+          >
+            <Text style={[styles.skipText, { color: colors.textTertiary }]}>
+              Skip for now
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -108,7 +222,7 @@ export function ProfileSetup() {
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: loading || !username.trim() ? colors.disabled : colors.primary }]}
-            onPress={handleCreate}
+            onPress={handleCreateUsername}
             disabled={loading || !username.trim()}
           >
             {loading ? (
@@ -182,5 +296,33 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  genderGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  genderButton: {
+    width: '47%',
+    paddingVertical: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  genderEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  genderLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  skipButton: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  skipText: {
+    fontSize: 14,
   },
 });

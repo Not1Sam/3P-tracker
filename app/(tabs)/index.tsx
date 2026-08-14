@@ -1,81 +1,38 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { FloatingActionButton } from '@/components/common/FloatingActionButton';
-import { BottomSheet } from '@/components/common/BottomSheet';
 import { LoggingScreen } from '@/screens/LoggingScreen';
 import { useThemeColors } from '@/contexts/ThemeContext';
-import type { LogType } from '@/types/logging';
+import { logger } from '@/utils/logger';
 
 export default function PoopScreen() {
   const colors = useThemeColors();
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [showLogging, setShowLogging] = useState(false);
-  const [selectedType, setSelectedType] = useState<LogType | null>(null);
 
-  const handleFabPress = () => {
-    setShowBottomSheet(true);
-  };
-
-  const handleSelectType = (type: LogType) => {
-    setSelectedType(type);
-    setShowBottomSheet(false);
-    setShowLogging(true);
-  };
-
-  const handleLoggingClose = () => {
-    setShowLogging(false);
-    setSelectedType(null);
-  };
-
-  const handleLoggingSaved = () => {
-    setShowLogging(false);
-    setSelectedType(null);
-  };
-
-  if (showLogging && selectedType) {
+  if (showLogging) {
     return (
       <LoggingScreen
-        type={selectedType}
-        onClose={handleLoggingClose}
-        onSaved={handleLoggingSaved}
+        type="poop"
+        onClose={() => setShowLogging(false)}
+        onSaved={() => setShowLogging(false)}
       />
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={styles.emoji}>💩</Text>
-      <Text style={[styles.text, { color: colors.textSecondary }]}>Tap 💩 to log</Text>
-
-      <FloatingActionButton onPress={handleFabPress} />
-
-      <BottomSheet
-        visible={showBottomSheet}
-        onClose={() => setShowBottomSheet(false)}
-        title="What are you logging?"
+      <TouchableOpacity
+        style={[styles.tapArea, { backgroundColor: colors.poopLight }]}
+        activeOpacity={0.7}
+        onPress={() => {
+          logger.navScreen('PoopScreen - open logging');
+          setShowLogging(true);
+        }}
+        accessibilityLabel="Log a poop"
+        accessibilityRole="button"
       >
-        <View style={styles.sheetContent}>
-          <TouchableOpacity
-            style={[styles.typeButton, { backgroundColor: colors.poopLight, borderColor: colors.poop }]}
-            onPress={() => handleSelectType('poop')}
-            accessibilityLabel="Log Poop"
-            accessibilityRole="button"
-          >
-            <Text style={styles.typeEmoji}>💩</Text>
-            <Text style={[styles.typeLabel, { color: colors.text }]}>Poop</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.typeButton, { backgroundColor: colors.pissLight, borderColor: colors.piss }]}
-            onPress={() => handleSelectType('piss')}
-            accessibilityLabel="Log Piss"
-            accessibilityRole="button"
-          >
-            <Text style={styles.typeEmoji}>🚽</Text>
-            <Text style={[styles.typeLabel, { color: colors.text }]}>Piss</Text>
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
+        <Text style={styles.emoji}>💩</Text>
+        <Text style={[styles.tapText, { color: colors.text }]}>Tap to log poop</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -85,31 +42,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 32,
   },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  text: {
-    fontSize: 18,
-  },
-  sheetContent: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  typeButton: {
-    flex: 1,
-    height: 100,
-    borderRadius: 16,
+  tapArea: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
   },
-  typeEmoji: {
-    fontSize: 48,
+  emoji: {
+    fontSize: 80,
     marginBottom: 8,
   },
-  typeLabel: {
+  tapText: {
     fontSize: 16,
     fontWeight: '600',
   },

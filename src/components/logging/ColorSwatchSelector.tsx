@@ -10,6 +10,7 @@ import {
 import { PISS_COLORS } from '@/constants/color-palette';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import type { CustomColor } from '@/types/logging';
+import { logger } from '@/utils/logger';
 
 interface ColorSwatchSelectorProps {
   selectedColorId: number | null;
@@ -29,6 +30,7 @@ export function ColorSwatchSelector({
   const handleSwatchPress = (colorId: number) => {
     const color = PISS_COLORS.find((c) => c.id === colorId);
     if (color) {
+      logger.uiAction('ColorSwatchSelector: long_press_color', { colorId, name: color.name });
       Alert.alert(color.name, color.medicalDescription);
     }
   };
@@ -38,7 +40,7 @@ export function ColorSwatchSelector({
     return (
       <TouchableOpacity
         style={styles.swatchContainer}
-        onPress={() => onSelect(item.id)}
+        onPress={() => { logger.uiAction('ColorSwatchSelector: select_color', { colorId: item.id, name: item.name }); onSelect(item.id); }}
         onLongPress={() => handleSwatchPress(item.id)}
         accessibilityLabel={`Color: ${item.name}`}
         accessibilityRole="button"
@@ -79,7 +81,7 @@ export function ColorSwatchSelector({
   const renderAddButton = () => (
     <TouchableOpacity
       style={styles.swatchContainer}
-      onPress={onAddCustom}
+      onPress={() => { logger.uiAction('ColorSwatchSelector: add_custom_color'); onAddCustom(); }}
       accessibilityLabel="Add Custom Color"
       accessibilityRole="button"
     >

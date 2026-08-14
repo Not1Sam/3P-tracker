@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { processInvite } from '@/services/social-service';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 
 export default function InviteHandler() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -13,10 +14,14 @@ export default function InviteHandler() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    logger.navScreen(`invite: ${code}`);
+  }, [code]);
+
+  useEffect(() => {
     if (authLoading || !code) return;
 
     if (!isAuthenticated) {
-      // Store invite code in state and redirect to login with invite param
+      logger.auth('inviteRedirectToLogin', { code });
       router.replace({
         pathname: '/(tabs)/profile',
         params: { invite: code },
@@ -24,24 +29,33 @@ export default function InviteHandler() {
       return;
     }
 
-    // Process the invite
     const handleInvite = async () => {
       if (!user) return;
 
-      const { error } = await processInvite(code, user.id);
+      try {
+        logger.socialAction('inviteProcess', { code, userId: user.id });
+        const { error } = await processInvite(code, user.id);
 
-      if (error) {
+        if (error) {
+          logger.socialAction('inviteProcessError', { code, error });
+          setStatus('error');
+          setErrorMessage(error);
+          setTimeout(() => {
+            router.replace('/(tabs)/profile');
+          }, 2000);
+          return;
+        }
+
+        logger.socialAction('inviteProcessSuccess', { code });
+        router.replace('/(tabs)/profile');
+      } catch (error) {
+        logger.socialAction('inviteProcessException', { code, error: String(error) });
         setStatus('error');
-        setErrorMessage(error);
-        // Navigate to profile after a delay
+        setErrorMessage('Failed to process invite');
         setTimeout(() => {
           router.replace('/(tabs)/profile');
         }, 2000);
-        return;
       }
-
-      // Success — navigate to profile tab
-      router.replace('/(tabs)/profile');
     };
 
     handleInvite();

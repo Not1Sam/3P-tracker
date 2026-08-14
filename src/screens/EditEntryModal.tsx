@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
 import { SmellSelector } from '@/components/logging/SmellSelector';
 import { CommentField } from '@/components/logging/CommentField';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType, SmellLevel } from '@/types/logging';
 
 interface EditEntryModalProps {
@@ -46,7 +47,14 @@ export function EditEntryModal({
   const [comment, setComment] = useState(entry.comment ?? '');
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (visible) {
+      logger.ui('Edit entry modal opened', { entryId: entry.id, type });
+    }
+  }, [visible, entry.id, type]);
+
   const handleSave = async () => {
+    logger.period('Edit entry save', { entryId: entry.id, type });
     setSaving(true);
     try {
       if (type === 'poop') {
@@ -61,8 +69,10 @@ export function EditEntryModal({
           comment: comment || undefined,
         });
       }
+      logger.periodAction('Edit entry save success', { entryId: entry.id });
       onSaved();
     } catch {
+      logger.periodAction('Edit entry save failed', { entryId: entry.id });
       // Error handling could show an alert, but for simplicity just close
       onClose();
     } finally {
@@ -90,7 +100,7 @@ export function EditEntryModal({
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Entry</Text>
           <TouchableOpacity
-            onPress={onClose}
+            onPress={() => { logger.ui('Edit entry modal closed'); onClose(); }}
             style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
             accessibilityLabel="Close"
             accessibilityRole="button"

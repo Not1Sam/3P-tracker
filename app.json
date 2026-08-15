@@ -3,7 +3,7 @@
     "name": "3P Tracker",
     "slug": "3ptracker",
     "version": "1.0.0",
-    "scheme": "3ptracker",
+    "scheme": "tracker3p",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

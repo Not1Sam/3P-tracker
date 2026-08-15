@@ -7,6 +7,7 @@ import { SwipeableEntryCard } from '@/components/history/SwipeableEntryCard';
 import { DateSectionHeader } from '@/components/history/DateSectionHeader';
 import { Toast } from '@/components/common/Toast';
 import { SkeletonList } from '@/components/common/Skeleton';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
@@ -94,7 +95,7 @@ export function HistoryScreen() {
         </View>
       ) : sections.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>📝</Text>
+          <MaterialCommunityIcons name="note-text-outline" size={64} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No entries yet!</Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             Start logging your bathroom trips
@@ -136,10 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 20,

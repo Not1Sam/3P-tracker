@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "not1sam.tracker3p"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -38,7 +39,14 @@
       "expo-secure-store",
       "expo-router",
       "expo-sharing",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      "expo-font"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "98af732f-a3ae-4900-b7d8-6e16cc498161"
+      }
+    }
   }
 }

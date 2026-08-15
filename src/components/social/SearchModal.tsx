@@ -12,6 +12,7 @@ import {
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar } from '@/components/social/Avatar';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as profileService from '@/services/profile-service';
 import { logger } from '@/utils/logger';
 
@@ -96,11 +97,11 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>Find Friends</Text>
             <TouchableOpacity onPress={() => { logger.uiAction('SearchModal: close'); onClose(); }} style={styles.closeBtn}>
-              <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
+              <MaterialCommunityIcons name="close" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🔍</Text>
+            <MaterialCommunityIcons name="magnify" size={32} color={colors.textTertiary} />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               Sign in to find friends
             </Text>
@@ -116,12 +117,12 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Find Friends</Text>
           <TouchableOpacity onPress={() => { logger.uiAction('SearchModal: close'); onClose(); }} style={styles.closeBtn}>
-            <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
+            <MaterialCommunityIcons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <View style={[styles.searchContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} style={{ marginRight: 8 }} />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -160,7 +161,7 @@ export function SearchModal({ visible, onClose, onSelectUser }: SearchModalProps
           />
         ) : searched ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🤷</Text>
+            <MaterialCommunityIcons name="help-rhombus-outline" size={32} color={colors.textTertiary} />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No users found
             </Text>
@@ -209,10 +210,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -222,10 +219,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 44,
-  },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
@@ -250,10 +243,6 @@ const styles = StyleSheet.create({
   emptyState: {
     padding: 40,
     alignItems: 'center',
-  },
-  emptyEmoji: {
-    fontSize: 32,
-    marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,

@@ -40,11 +40,11 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   const setMode = useCallback((newMode: ThemeMode) => {
     logger.uiAction('Theme mode changed', { from: mode, to: newMode });
     setModeState(newMode);
-  }, []);
+  }, [mode]);
 
   const toggleMode = useCallback(() => {
     setModeState((prev) => {
-      const next = prev === 'playful' ? 'clinical' : 'playful';
+      const next = prev === 'light' ? 'dark' : 'light';
       logger.uiAction('Theme mode toggled', { from: prev, to: next });
       return next;
     });

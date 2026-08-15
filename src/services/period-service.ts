@@ -21,7 +21,6 @@ import type {
   CyclePhase,
   PeriodStats,
 } from '@/types/period';
-import { DEFAULT_CYCLE_LENGTH } from '@/constants/period';
 import { logger } from '@/utils/logger';
 
 /**

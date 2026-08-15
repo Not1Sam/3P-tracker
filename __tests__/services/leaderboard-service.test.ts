@@ -7,6 +7,16 @@
  */
 
 // ─── Mock: @/db (local SQLite via Drizzle) ────────────────────────
+import { getCurrentUser } from '@/services/auth-service';
+
+// ─── Imports (after mocks) ────────────────────────────────────────
+import {
+  getPersonalScore,
+  calculateStreak,
+  getFriendsLeaderboard,
+  getGlobalLeaderboard,
+} from '@/services/leaderboard-service';
+
 const mockDb: any = {
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
@@ -42,17 +52,6 @@ jest.mock('@/services/supabase-client', () => ({
     };
   },
 }));
-
-import { getCurrentUser } from '@/services/auth-service';
-import { supabase } from '@/services/supabase-client';
-
-// ─── Imports (after mocks) ────────────────────────────────────────
-import {
-  getPersonalScore,
-  calculateStreak,
-  getFriendsLeaderboard,
-  getGlobalLeaderboard,
-} from '@/services/leaderboard-service';
 
 // ─── Test setup ────────────────────────────────────────────────────
 beforeEach(() => {
@@ -207,7 +206,6 @@ describe('leaderboard-service', () => {
         { user_id: 'friend-1', poop_count: 10, profiles: { username: 'alice' } },
         { user_id: 'friend-2', poop_count: 5, profiles: { username: 'bob' } },
       ];
-      let fromCallCount = 0;
 
       supabaseFromHandler = (table: string) => {
         if (table === 'friends') {

@@ -4,6 +4,9 @@
  */
 
 // Mock react-native
+import { Swipeable } from 'react-native-gesture-handler';
+import type { PoopLogEntry } from '@/types/logging';
+
 jest.mock('react-native', () => {
   const createComponent = (name: string) => {
     const Component = ({ children, ...props }: any) => ({ type: name, props: { children, ...props } });
@@ -119,9 +122,6 @@ jest.mock('@/constants/color-palette', () => ({
   getPissColorHex: jest.fn(() => '#FFFFFF'),
 }));
 
-import { Swipeable } from 'react-native-gesture-handler';
-import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
-
 const makePoopEntry = (overrides: Partial<PoopLogEntry> = {}): PoopLogEntry => ({
   id: 'poop-1',
   timestamp: new Date('2026-08-08T10:30:00'),
@@ -137,12 +137,12 @@ const makePoopEntry = (overrides: Partial<PoopLogEntry> = {}): PoopLogEntry => (
 
 describe('SwipeableEntryCard', () => {
   it('renders Swipeable with correct props', () => {
-    const entry = makePoopEntry();
-    const onDelete = jest.fn();
-    const onPress = jest.fn();
+    const _entry = makePoopEntry();
+    const _onDelete = jest.fn();
+    const _onPress = jest.fn();
 
     // Simulate what SwipeableEntryCard renders
-    const swipeableProps = {
+    const _swipeableProps = {
       renderRightActions: expect.any(Function),
       rightThreshold: 40,
       friction: 2,

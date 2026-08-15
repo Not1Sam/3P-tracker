@@ -4,6 +4,11 @@
  */
 
 // Mock react-native
+import { getBristolType } from '@/constants/bristol-chart';
+import { getPissColor, getPissColorHex } from '@/constants/color-palette';
+import { formatEntryTime } from '@/utils/date-helpers';
+import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
+
 jest.mock('react-native', () => {
   const createComponent = (name: string) => {
     const Component = ({ children, ...props }: any) => ({ type: name, props: { children, ...props } });
@@ -20,7 +25,7 @@ jest.mock('react-native', () => {
 
 // Mock date-helpers
 jest.mock('@/utils/date-helpers', () => ({
-  formatEntryTime: jest.fn((date: Date) => '10:30 AM'),
+  formatEntryTime: jest.fn((_date: Date) => '10:30 AM'),
 }));
 
 // Mock bristol-chart
@@ -105,11 +110,6 @@ jest.mock('@/contexts/ThemeContext', () => {
     useThemeSpacing: () => playfulTheme.spacing,
   };
 });
-
-import { getBristolType } from '@/constants/bristol-chart';
-import { getPissColor, getPissColorHex } from '@/constants/color-palette';
-import { formatEntryTime } from '@/utils/date-helpers';
-import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
 
 const makePoopEntry = (overrides: Partial<PoopLogEntry> = {}): PoopLogEntry => ({
   id: 'poop-1',

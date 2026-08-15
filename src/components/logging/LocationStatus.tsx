@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 import type { CapturedLocation } from '@/types/logging';
@@ -15,13 +16,10 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
   if (loading) {
     logger.debug('INPUT', 'Location status: loading');
     return (
-      <Text
-        style={[styles.text, { color: colors.textTertiary }]}
-        accessibilityLabel="Finding location"
-        accessibilityRole="text"
-      >
-        📍 Finding location...
-      </Text>
+      <View style={styles.row}>
+        <MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.textTertiary} />
+        <Text style={[styles.text, { color: colors.textTertiary }]}> Finding location...</Text>
+      </View>
     );
   }
 
@@ -29,40 +27,35 @@ export function LocationStatus({ location, loading }: LocationStatusProps) {
     logger.debug('INPUT', 'Location captured', { city: location.city, hasCoords: !!(location.lat && location.lng) });
     if (location.city) {
       return (
-        <Text
-          style={[styles.text, { color: colors.textSecondary }]}
-          accessibilityLabel={`Location: ${location.city}`}
-          accessibilityRole="text"
-        >
-          📍 {location.city}
-        </Text>
+        <View style={styles.row}>
+          <MaterialCommunityIcons name="map-marker" size={14} color={colors.textSecondary} />
+          <Text style={[styles.text, { color: colors.textSecondary }]}> {location.city}</Text>
+        </View>
       );
     }
     return (
-      <Text
-        style={[styles.text, { color: colors.textSecondary }]}
-        accessibilityLabel="Location saved as coordinates"
-        accessibilityRole="text"
-      >
-        📍 Coordinates saved
-      </Text>
+      <View style={styles.row}>
+        <MaterialCommunityIcons name="map-marker" size={14} color={colors.textSecondary} />
+        <Text style={[styles.text, { color: colors.textSecondary }]}> Coordinates saved</Text>
+      </View>
     );
   }
 
   return (
-    <Text
-      style={[styles.text, { color: colors.textTertiary }]}
-      accessibilityLabel="Location unavailable"
-      accessibilityRole="text"
-    >
-      📍 Location unavailable
-    </Text>
+    <View style={styles.row}>
+      <MaterialCommunityIcons name="map-marker-off" size={14} color={colors.textTertiary} />
+      <Text style={[styles.text, { color: colors.textTertiary }]}> Location unavailable</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   text: {
     fontSize: 12,
-    marginTop: 4,
   },
 });

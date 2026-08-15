@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, RefreshControl, StyleSheet, View, Text, SafeAreaView } from 'react-native';
+import { ScrollView, RefreshControl, StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getFriendsLeaderboard, getGlobalLeaderboard } from '@/services/leaderboard-service';
 import { Podium } from '@/components/leaderboard/Podium';
 import { LeaderboardList } from '@/components/leaderboard/LeaderboardList';
 import { LeaderboardToggle } from '@/components/leaderboard/LeaderboardToggle';
+import { EmptyState } from '@/components/common/EmptyState';
 import { logger } from '@/utils/logger';
 import type { LeaderboardEntry } from '@/services/leaderboard-service';
 
@@ -17,7 +20,7 @@ export default function LeaderboardScreen() {
   const { isAuthenticated } = useAuth();
 
   const [view, setView] = useState<ViewType>('friends');
-  const [logType, setLogType] = useState<LogType>('poop');
+  const [logType] = useState<LogType>('poop');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,23 +89,23 @@ export default function LeaderboardScreen() {
 
         {/* Friends view requires auth */}
         {view === 'friends' && !isAuthenticated ? (
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-              Sign in to see friends leaderboard
-            </Text>
-          </View>
+          <EmptyState
+            iconName="lock"
+            iconColor={colors.textTertiary}
+            title="Sign in to see friends leaderboard"
+            subtitle="Compete with friends and see who's logging more!"
+          />
         ) : loading && !refreshing ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-              Loading...
-            </Text>
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : entries.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-              No data yet — start logging!
-            </Text>
-          </View>
+          <EmptyState
+            iconName="trophy"
+            iconColor={colors.primary}
+            title="No data yet"
+            subtitle="Start logging to see your ranking on the leaderboard!"
+          />
         ) : (
           <>
             <Podium entries={entries.slice(0, 3)} />

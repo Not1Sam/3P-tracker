@@ -1,23 +1,4 @@
 // Mock database module
-const mockDb: any = {
-  insert: jest.fn().mockReturnThis(),
-  values: jest.fn().mockResolvedValue(undefined),
-  select: jest.fn().mockReturnThis(),
-  from: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
-  orderBy: jest.fn().mockReturnThis(),
-  limit: jest.fn(),
-  delete: jest.fn().mockReturnThis(),
-};
-
-jest.mock('@/db', () => ({
-  getDatabase: jest.fn().mockResolvedValue(mockDb),
-}));
-
-jest.mock('expo-crypto', () => ({
-  randomUUID: jest.fn(() => 'test-uuid-123'),
-}));
-
 // Import after mocks
 import {
   createCustomType,
@@ -38,9 +19,27 @@ import {
 import {
   createPissLog,
   getPissLogs,
-  getPissLogById,
   deletePissLog,
 } from '@/db/repositories/piss-repository';
+
+const mockDb: any = {
+  insert: jest.fn().mockReturnThis(),
+  values: jest.fn().mockResolvedValue(undefined),
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn(),
+  delete: jest.fn().mockReturnThis(),
+};
+
+jest.mock('@/db', () => ({
+  getDatabase: jest.fn().mockResolvedValue(mockDb),
+}));
+
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid-123'),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();

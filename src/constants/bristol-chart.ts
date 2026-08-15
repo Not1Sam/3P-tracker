@@ -64,3 +64,20 @@ export function getBristolDescription(id: number): string {
   const type = getBristolType(id);
   return type ? `${type.name}: ${type.description}` : 'Unknown type';
 }
+
+/**
+ * Check if a typeId represents a custom type (negative numbers)
+ */
+export function isCustomTypeId(typeId: number): boolean {
+  return typeId < 0;
+}
+
+/**
+ * Get the custom type name from a negative typeId.
+ * Requires the customTypes array (from getCustomTypes()).
+ * Returns the custom type name or 'Unknown Custom' if not found.
+ */
+export function getCustomTypeName(typeId: number, customTypes: { id: string; name: string }[]): string {
+  const index = Math.abs(typeId) - 1;
+  return customTypes[index]?.name ?? 'Unknown Custom';
+}

@@ -4,6 +4,15 @@
  */
 
 // Mock database module
+// Import after mocks
+import {
+  getCalendarMarkedDates,
+  getEntriesForDate,
+  getEntriesPaginated,
+  getEntryById,
+  updateEntry,
+} from '@/services/history-service';
+
 const mockDb: any = {
   insert: jest.fn().mockReturnThis(),
   values: jest.fn().mockResolvedValue(undefined),
@@ -25,15 +34,6 @@ jest.mock('@/db', () => ({
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => 'test-uuid-123'),
 }));
-
-// Import after mocks
-import {
-  getCalendarMarkedDates,
-  getEntriesForDate,
-  getEntriesPaginated,
-  getEntryById,
-  updateEntry,
-} from '@/services/history-service';
 
 beforeEach(() => {
   jest.clearAllMocks();

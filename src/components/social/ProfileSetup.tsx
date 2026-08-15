@@ -13,28 +13,29 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/contexts/ProfileContext';
 import { createProfile } from '@/services/profile-service';
 import { setUserGender, type UserGender } from '@/services/settings';
 import { Avatar } from '@/components/social/Avatar';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { logger } from '@/utils/logger';
 
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 
-const GENDER_OPTIONS: { value: UserGender; label: string; emoji: string }[] = [
-  { value: 'female', label: 'Female', emoji: '♀️' },
-  { value: 'male', label: 'Male', emoji: '♂️' },
-  { value: 'other', label: 'Other', emoji: '⚧️' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say', emoji: '🤐' },
+const GENDER_OPTIONS: { value: UserGender; label: string; iconName: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+  { value: 'female', label: 'Female', iconName: 'gender-female' },
+  { value: 'male', label: 'Male', iconName: 'gender-male' },
 ];
 
 type Step = 'username' | 'gender';
 
-export function ProfileSetup() {
+interface ProfileSetupProps {
+  onComplete?: () => void;
+}
+
+export function ProfileSetup({ onComplete }: ProfileSetupProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { refreshProfile } = useProfile();
   const [step, setStep] = useState<Step>('username');
   const [username, setUsername] = useState('');
   const [selectedGender, setSelectedGender] = useState<UserGender | null>(null);
@@ -69,13 +70,19 @@ export function ProfileSetup() {
 
     try {
       await createProfile(user.id, normalized);
-      await refreshProfile();
+      // Don't refreshProfile yet — gender step comes next
       logger.uiAction('ProfileSetup: username_created', { username: normalized });
       setStep('gender');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to create profile';
-      setError(message);
-      logger.uiError('ProfileSetup: username_create_failed', { error: message });
+      // Profile already exists (user completed username but not gender last time)
+      if (message.includes('already taken') || message.includes('23505')) {
+        logger.uiAction('ProfileSetup: profile_already_exists, proceeding to gender');
+        setStep('gender');
+      } else {
+        setError(message);
+        logger.uiError('ProfileSetup: username_create_failed', { error: message });
+      }
     } finally {
       setLoading(false);
     }
@@ -91,6 +98,12 @@ export function ProfileSetup() {
       logger.uiAction('ProfileSetup: gender_confirm', { gender: selectedGender });
       setUserGender(selectedGender);
     }
+    onComplete?.();
+  };
+
+  const handleGenderSkip = () => {
+    logger.uiAction('ProfileSetup: gender_skip');
+    onComplete?.();
   };
 
   if (step === 'gender') {
@@ -105,7 +118,7 @@ export function ProfileSetup() {
         >
           <View style={styles.header}>
             <Avatar username={previewUsername} size={96} />
-            <Text style={[styles.title, { color: colors.text }]}>What's your gender?</Text>
+            <Text style={[styles.title, { color: colors.text }]}>What&apos;s your gender?</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               This helps us show you the right features
             </Text>
@@ -131,7 +144,7 @@ export function ProfileSetup() {
                 onPress={() => { handleGenderSelect(option.value); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.genderEmoji}>{option.emoji}</Text>
+                <MaterialCommunityIcons name={option.iconName} size={32} color={selectedGender === option.value ? colors.primary : colors.text} />
                 <Text
                   style={[
                     styles.genderLabel,
@@ -164,7 +177,7 @@ export function ProfileSetup() {
 
           <TouchableOpacity
             style={styles.skipButton}
-            onPress={() => {}}
+            onPress={handleGenderSkip}
           >
             <Text style={[styles.skipText, { color: colors.textTertiary }]}>
               Skip for now
@@ -309,10 +322,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     alignItems: 'center',
-  },
-  genderEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
   },
   genderLabel: {
     fontSize: 14,

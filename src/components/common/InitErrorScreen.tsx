@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
@@ -14,10 +15,10 @@ export function InitErrorScreen({ error, onRetry, onReset }: InitErrorScreenProp
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={styles.emoji}>⚠️</Text>
+      <MaterialCommunityIcons name="alert-circle-outline" size={64} color={colors.error} />
       <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
       <Text style={[styles.message, { color: colors.textSecondary }]}>
-        The app couldn't start properly. This might be a temporary issue.
+        The app couldn&apos;t start properly. This might be a temporary issue.
       </Text>
 
       <View style={styles.errorBox}>
@@ -51,10 +52,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   title: {
     fontSize: 22,

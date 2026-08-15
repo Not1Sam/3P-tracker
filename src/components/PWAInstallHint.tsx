@@ -5,7 +5,9 @@ import {
   TouchableOpacity,
   Animated,
   StyleSheet,
+  View,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
@@ -65,9 +67,10 @@ export function PWAInstallHint() {
         style={styles.content}
         activeOpacity={0.8}
       >
-        <Text style={[styles.text, { color: theme.colors.textSecondary }]}>
-          ⬆️ Add to Home Screen for the full app experience
-        </Text>
+        <View style={styles.textRow}>
+          <MaterialCommunityIcons name="arrow-up-bold" size={14} color={theme.colors.textSecondary} />
+          <Text style={[styles.text, { color: theme.colors.textSecondary }]}> Add to Home Screen for the full app experience</Text>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -94,5 +97,9 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 12,
     fontWeight: '400',
+  },
+  textRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

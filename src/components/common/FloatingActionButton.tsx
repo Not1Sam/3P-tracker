@@ -1,18 +1,19 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
-  icon?: string;
+  iconName?: keyof typeof MaterialCommunityIcons.glyphMap;
   color?: string;
   style?: ViewStyle;
 }
 
 export function FloatingActionButton({
   onPress,
-  icon = '💩',
+  iconName = 'plus',
   color,
   style,
 }: FloatingActionButtonProps) {
@@ -20,7 +21,7 @@ export function FloatingActionButton({
   const fabColor = color ?? colors.primary;
 
   const handlePress = () => {
-    logger.uiAction('FAB pressed', { icon });
+    logger.uiAction('FAB pressed', { iconName });
     onPress();
   };
 
@@ -32,7 +33,7 @@ export function FloatingActionButton({
       accessibilityLabel="Log entry"
       accessibilityRole="button"
     >
-      <Text style={styles.icon}>{icon}</Text>
+      <MaterialCommunityIcons name={iconName} size={28} color="#FFFFFF" />
     </TouchableOpacity>
   );
 }
@@ -52,8 +53,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-  },
-  icon: {
-    fontSize: 28,
   },
 });

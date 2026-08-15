@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   StyleSheet,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
@@ -53,7 +54,7 @@ export function BottomSheet({
                 accessibilityLabel="Close"
                 accessibilityRole="button"
               >
-                <Text style={[styles.closeIcon, { color: colors.textSecondary }]}>✕</Text>
+                <MaterialCommunityIcons name="close" size={14} color={colors.textSecondary} />
               </TouchableOpacity>
               {children}
             </View>
@@ -91,9 +92,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeIcon: {
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });

@@ -74,19 +74,26 @@ export function BristolTypeSelector({
         );
       })}
 
-      {customTypes.map((custom) => {
+      {customTypes.map((custom, index) => {
+        const customTypeId = -(index + 1);
+        const isSelected = selectedTypeId === customTypeId;
         return (
           <TouchableOpacity
             key={custom.id}
-            style={[styles.cell, styles.cellUnselected, { borderColor: colors.border, backgroundColor: colors.surface }]}
-            onPress={() => {}}
+            style={[
+              styles.cell,
+              isSelected
+                ? [styles.cellSelected, { borderColor: colors.primary, backgroundColor: colors.primaryLight + '20' }]
+                : [styles.cellUnselected, { borderColor: colors.border, backgroundColor: colors.surface }],
+            ]}
+            onPress={() => { logger.uiAction('BristolTypeSelector: select_custom_type', { name: custom.name }); onSelect(customTypeId); }}
             accessibilityLabel={`Custom type: ${custom.name}`}
             accessibilityRole="button"
           >
-            <View style={[styles.customBadge, { backgroundColor: colors.surfaceVariant }]}>
-              <Text style={[styles.customBadgeText, { color: colors.textSecondary }]}>Custom</Text>
+            <View style={[styles.customBadge, { backgroundColor: isSelected ? colors.primary + '20' : colors.surfaceVariant }]}>
+              <Text style={[styles.customBadgeText, { color: isSelected ? colors.primary : colors.textSecondary }]}>Custom</Text>
             </View>
-            <Text style={[styles.typeName, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[styles.typeName, { color: isSelected ? colors.text : colors.textSecondary }]} numberOfLines={1}>
               {custom.name}
             </Text>
           </TouchableOpacity>

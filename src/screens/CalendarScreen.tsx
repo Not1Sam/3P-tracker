@@ -1,6 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { getCalendarMarkedDates } from '@/services/history-service';
+import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
 type MarkedDateDot = {
@@ -17,9 +20,6 @@ type MarkedDateValue = {
 };
 
 type MarkedDates = Record<string, MarkedDateValue>;
-import { useFocusEffect, useRouter } from 'expo-router';
-import { getCalendarMarkedDates } from '@/services/history-service';
-import { useThemeColors } from '@/contexts/ThemeContext';
 
 export function CalendarScreen() {
   const router = useRouter();

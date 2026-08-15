@@ -1,56 +1,92 @@
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { getEncryptionKey } from '@/services/key-manager';
+import { runMigrations } from '@/db/migrate';
 import * as schema from '@/db/schema';
 import { logger } from '@/utils/logger';
 
-const DATABASE_NAME = '3ptracker.db';
+const BASE_DATABASE_NAME = '3ptracker';
 
-let sqliteDb: SQLite.SQLiteDatabase | null = null;
-let database: ReturnType<typeof drizzle<typeof schema>> | null = null;
+let sqliteDb: any = null;
+let database: any = null;
+let currentUserId: string | null = null;
+let pendingOpen: Promise<any> | null = null;
 
-/**
- * Get the Drizzle ORM database instance.
- * Singleton — first call opens the encrypted DB, sets PRAGMA key, enables WAL,
- * and wraps in Drizzle. Subsequent calls return the cached instance.
- */
-export async function getDatabase() {
-  if (database) {
-    return database;
-  }
-
-  logger.db('Opening database', { name: DATABASE_NAME });
-  const encryptionKey = await getEncryptionKey();
-
-  sqliteDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
-
-  await sqliteDb.execAsync(`PRAGMA key = '${encryptionKey}'`);
-  await sqliteDb.execAsync('PRAGMA journal_mode = WAL');
-
-  database = drizzle(sqliteDb, { schema });
-  logger.db('Database opened and initialized', { name: DATABASE_NAME });
-
-  return database;
+function getDatabaseName(userId: string | null): string {
+  return userId ? `${BASE_DATABASE_NAME}-${userId}.db` : `${BASE_DATABASE_NAME}.db`;
 }
 
 /**
- * Get the raw expo-sqlite database handle (for running raw SQL migrations).
- * Calls getDatabase() internally to ensure the connection exists.
+ * Set the current user ID for database scoping.
  */
-export async function getSqliteDatabase(): Promise<SQLite.SQLiteDatabase> {
+export function setCurrentUserId(userId: string | null): void {
+  if (currentUserId !== userId) {
+    logger.db('Setting current user', { from: currentUserId, to: userId });
+    currentUserId = userId;
+    database = null;
+    sqliteDb = null;
+  }
+}
+
+/**
+ * Get the Drizzle ORM database instance.
+ */
+export async function getDatabase(): Promise<any> {
+  if (database) return database;
+  if (pendingOpen) return pendingOpen;
+
+  pendingOpen = openDatabase();
+  try {
+    return await pendingOpen;
+  } finally {
+    pendingOpen = null;
+  }
+}
+
+async function openDatabase(): Promise<any> {
+  if (Platform.OS === 'web') {
+    logger.db('SQLite not available on web — running in preview mode');
+    return null;
+  }
+
+  const SQLite = await import('expo-sqlite');
+  const dbName = getDatabaseName(currentUserId);
+  logger.db('Opening database', { name: dbName, userId: currentUserId });
+  const encryptionKey = await getEncryptionKey();
+
+  const sqlite = await SQLite.openDatabaseAsync(dbName);
+
+  await sqlite.execAsync(`PRAGMA key = '${encryptionKey}'`);
+  await sqlite.execAsync('PRAGMA journal_mode = WAL');
+
+  await runMigrations(sqlite);
+
+  const db = drizzle(sqlite, { schema });
+  sqliteDb = sqlite;
+  database = db;
+  logger.db('Database opened and initialized', { name: dbName });
+
+  return db;
+}
+
+/**
+ * Get the raw expo-sqlite database handle.
+ */
+export async function getSqliteDatabase(): Promise<any> {
+  if (Platform.OS === 'web') return null;
   if (!sqliteDb) {
     logger.db('SQLite handle requested, initializing database');
     await getDatabase();
   }
-  return sqliteDb!;
+  return sqliteDb;
 }
 
 /**
- * Close the database connection
+ * Close the database connection.
  */
 export async function closeDatabase(): Promise<void> {
   if (database) {
-    logger.db('Closing database connection');
+    logger.db('Closing database connection', { userId: currentUserId });
     database = null;
     sqliteDb = null;
     logger.db('Database connection closed');

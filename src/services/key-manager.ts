@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import { SafeStorage } from '@/utils/storage';
 import { logger } from '@/utils/logger';
 
 const KEY_STORAGE_KEY = 'db_encryption_key';
@@ -19,7 +19,7 @@ function generateEncryptionKey(): string {
  * Store the encryption key in SecureStore (iOS Keychain / Android Keystore)
  */
 async function storeEncryptionKey(key: string): Promise<void> {
-  await SecureStore.setItemAsync(KEY_STORAGE_KEY, key);
+  await SafeStorage.setItem(KEY_STORAGE_KEY, key);
 }
 
 /**
@@ -27,7 +27,7 @@ async function storeEncryptionKey(key: string): Promise<void> {
  * Returns null if no key exists (first launch)
  */
 async function retrieveEncryptionKey(): Promise<string | null> {
-  return await SecureStore.getItemAsync(KEY_STORAGE_KEY);
+  return await SafeStorage.getItem(KEY_STORAGE_KEY);
 }
 
 /**

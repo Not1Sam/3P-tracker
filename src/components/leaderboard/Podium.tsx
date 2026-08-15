@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Avatar } from '@/components/social/Avatar';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
@@ -13,15 +14,16 @@ interface PodiumColumnProps {
   entry: LeaderboardEntry;
   rank: number;
   height: number;
-  medal: string;
+  iconName: 'medal' | 'medal-outline';
+  iconColor: string;
 }
 
-function PodiumColumn({ entry, rank, height, medal }: PodiumColumnProps) {
+function PodiumColumn({ entry, rank, height, iconName, iconColor }: PodiumColumnProps) {
   const colors = useThemeColors();
 
   return (
     <View style={styles.column}>
-      <Text style={styles.medal}>{medal}</Text>
+      <MaterialCommunityIcons name={iconName} size={24} color={iconColor} />
       <Avatar username={entry.username} size={48} />
       <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
         {entry.username}
@@ -61,13 +63,13 @@ export function Podium({ entries }: PodiumProps) {
   return (
     <View style={styles.container}>
       {second && (
-        <PodiumColumn entry={second} rank={2} height={120} medal="🥈" />
+        <PodiumColumn entry={second} rank={2} height={120} iconName="medal" iconColor="#C0C0C0" />
       )}
       {first && (
-        <PodiumColumn entry={first} rank={1} height={160} medal="🥇" />
+        <PodiumColumn entry={first} rank={1} height={160} iconName="medal" iconColor="#FFD700" />
       )}
       {third && (
-        <PodiumColumn entry={third} rank={3} height={100} medal="🥉" />
+        <PodiumColumn entry={third} rank={3} height={100} iconName="medal" iconColor="#CD7F32" />
       )}
     </View>
   );
@@ -86,9 +88,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     gap: 4,
-  },
-  medal: {
-    fontSize: 24,
   },
   username: {
     fontSize: 14,

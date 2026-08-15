@@ -6,6 +6,10 @@
  */
 
 // Mock react-native
+import { EntryDetailScreen } from '@/screens/EntryDetailScreen';
+import { getEntryById } from '@/services/history-service';
+import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
+
 jest.mock('react-native', () => {
   const createComponent = (name: string) => {
     const Component = ({ children, ...props }: any) => ({ type: name, props: { children, ...props } });
@@ -149,7 +153,7 @@ jest.mock('@/services/history-service', () => ({
 
 // Mock date-helpers
 jest.mock('@/utils/date-helpers', () => ({
-  formatEntryTime: jest.fn((date: Date) => 'Aug 8, 3:45 PM'),
+  formatEntryTime: jest.fn((_date: Date) => 'Aug 8, 3:45 PM'),
 }));
 
 // Mock constants
@@ -196,10 +200,6 @@ jest.mock('@/components/common/Toast', () => ({
     return { type: 'Toast', props };
   },
 }));
-
-import { EntryDetailScreen } from '@/screens/EntryDetailScreen';
-import { getEntryById, deleteEntryWithUndo } from '@/services/history-service';
-import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
 
 beforeEach(() => {
   mockStateValues = [];

@@ -1,4 +1,14 @@
 // Mock Expo modules before imports
+// Now import the modules
+import { BRISTOL_TYPES } from '@/constants/bristol-chart';
+import { PISS_COLORS } from '@/constants/color-palette';
+import {
+  DataTier,
+  classifyTable,
+  getSyncableTables,
+  canSync,
+} from '@/constants/privacy-tiers';
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(),
@@ -38,17 +48,6 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
 jest.mock('drizzle-orm', () => ({
   gte: jest.fn(),
 }));
-
-// Now import the modules
-import { BRISTOL_TYPES } from '@/constants/bristol-chart';
-import { PISS_COLORS } from '@/constants/color-palette';
-import {
-  DataTier,
-  SYNCABLE_TABLES,
-  classifyTable,
-  getSyncableTables,
-  canSync,
-} from '@/constants/privacy-tiers';
 
 // Test 1: Database encryption (LOG-12)
 describe('Database Encryption', () => {

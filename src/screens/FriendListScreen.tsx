@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/contexts/ThemeContext';
@@ -13,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { SearchModal } from '@/components/social/SearchModal';
 import { FriendCard } from '@/components/social/FriendCard';
+import { SkeletonList } from '@/components/common/Skeleton';
 import { FriendRequestCard } from '@/components/social/FriendRequestCard';
 import { Toast } from '@/components/common/Toast';
 import * as socialService from '@/services/social-service';
@@ -80,8 +80,28 @@ export function FriendListScreen() {
   }, [user, showToast]);
 
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [friendsData, receivedData, sentData] = await Promise.all([
+          socialService.getFriends(user.id),
+          socialService.getPendingReceivedRequests(user.id),
+          socialService.getPendingSentRequests(user.id),
+        ]);
+        if (!cancelled) {
+          setFriends(friendsData);
+          setReceivedRequests(receivedData);
+          setSentRequests(sentData);
+        }
+      } catch {
+        if (!cancelled) showToast('Failed to load friends');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, showToast]);
 
   useEffect(() => {
     logger.ui('Friend list screen opened');
@@ -176,9 +196,11 @@ export function FriendListScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading friends...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>Friends</Text>
+        </View>
+        <SkeletonList count={5} />
       </View>
     );
   }
@@ -295,9 +317,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },

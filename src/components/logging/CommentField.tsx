@@ -5,17 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   LayoutAnimation,
-  Platform,
-  UIManager,
   StyleSheet,
 } from 'react-native';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 interface CommentFieldProps {
   value: string;
@@ -107,5 +100,10 @@ const styles = StyleSheet.create({
   collapseButton: {
     alignSelf: 'flex-end',
     marginTop: 4,
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

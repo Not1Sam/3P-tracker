@@ -1,55 +1,106 @@
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { type ThemeMode } from '@/constants/theme';
 import { logger } from '@/utils/logger';
 
-// SecureStore-compatible wrapper with sync API (MMKV replacement)
-// expo-secure-store has getItemSync/setItemSync on native platforms
-export const storage = {
-  getString(key: string): string | undefined {
-    try {
-      return SecureStore.getItem(key) ?? undefined;
-    } catch {
-      return undefined;
-    }
-  },
-  getNumber(key: string): number | undefined {
-    try {
-      const val = SecureStore.getItem(key);
-      if (val === null || val === undefined) return undefined;
-      const num = Number(val);
-      return isNaN(num) ? undefined : num;
-    } catch {
-      return undefined;
-    }
-  },
-  set(key: string, value: string | number | boolean): void {
-    try {
-      SecureStore.setItem(key, String(value));
-    } catch {}
-  },
-  delete(key: string): void {
-    try {
-      SecureStore.deleteItemAsync(key);
-    } catch {}
-  },
-  clearAll(): void {
-    // SecureStore doesn't support clearAll; we clear known keys
-    const keys = [
-      'theme', 'syncDayOfMonth', 'userName', 'userEmail',
-      'lastSyncTimestamp', 'lastAutoBackup',
-      'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
-      'inviteCode',
-    ];
-    for (const key of keys) {
-      try { SecureStore.deleteItemAsync(key); } catch {}
-    }
-  },
-};
+// Platform-aware storage wrapper
+// Web: localStorage (sync), Native: expo-secure-store (sync via getItem/setItem)
+function getSyncStorage() {
+  if (Platform.OS === 'web') {
+    return {
+      getString(key: string): string | undefined {
+        try {
+          return localStorage.getItem(key) ?? undefined;
+        } catch {
+          return undefined;
+        }
+      },
+      getNumber(key: string): number | undefined {
+        try {
+          const val = localStorage.getItem(key);
+          if (val === null || val === undefined) return undefined;
+          const num = Number(val);
+          return isNaN(num) ? undefined : num;
+        } catch {
+          return undefined;
+        }
+      },
+      set(key: string, value: string | number | boolean): void {
+        try {
+          localStorage.setItem(key, String(value));
+        } catch {}
+      },
+      delete(key: string): void {
+        try {
+          localStorage.removeItem(key);
+        } catch {}
+      },
+      clearAll(): void {
+        const keys = [
+          'theme', 'syncDayOfMonth', 'userName', 'userEmail',
+          'lastSyncTimestamp', 'lastAutoBackup',
+          'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
+          'inviteCode',
+        ];
+        for (const key of keys) {
+          try { localStorage.removeItem(key); } catch {}
+        }
+      },
+    };
+  }
+
+  // Native: use expo-secure-store sync methods
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const SecureStore = require('expo-secure-store');
+  return {
+    getString(key: string): string | undefined {
+      try {
+        return SecureStore.getItem(key) ?? undefined;
+      } catch {
+        return undefined;
+      }
+    },
+    getNumber(key: string): number | undefined {
+      try {
+        const val = SecureStore.getItem(key);
+        if (val === null || val === undefined) return undefined;
+        const num = Number(val);
+        return isNaN(num) ? undefined : num;
+      } catch {
+        return undefined;
+      }
+    },
+    set(key: string, value: string | number | boolean): void {
+      try {
+        SecureStore.setItem(key, String(value));
+      } catch {}
+    },
+    delete(key: string): void {
+      try {
+        SecureStore.deleteItemAsync(key);
+      } catch {}
+    },
+    clearAll(): void {
+      const keys = [
+        'theme', 'syncDayOfMonth', 'userName', 'userEmail',
+        'lastSyncTimestamp', 'lastAutoBackup',
+        'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
+        'inviteCode',
+      ];
+      for (const key of keys) {
+        try { SecureStore.deleteItemAsync(key); } catch {}
+      }
+    },
+  };
+}
+
+export const storage = getSyncStorage();
 
 // Theme settings
 export function getTheme(): ThemeMode {
   const stored = storage.getString('theme');
-  return stored === 'clinical' ? 'clinical' : 'playful';
+  if (stored === 'dark') return 'dark';
+  if (stored === 'clinical') return 'dark'; // migrate old value
+  return 'light';
 }
 
 export function setTheme(theme: ThemeMode): void {

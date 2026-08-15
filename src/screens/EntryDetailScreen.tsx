@@ -5,18 +5,19 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getEntryById, deleteEntryWithUndo } from '@/services/history-service';
 import { formatEntryTime } from '@/utils/date-helpers';
-import { getBristolType } from '@/constants/bristol-chart';
+import { getBristolType, isCustomTypeId, getCustomTypeName } from '@/constants/bristol-chart';
 import { getPissColor } from '@/constants/color-palette';
 import { SMELL_OPTIONS } from '@/constants/smell-options';
 import { EditEntryModal } from '@/screens/EditEntryModal';
 import { Toast } from '@/components/common/Toast';
+import { Skeleton } from '@/components/common/Skeleton';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { getCustomTypes } from '@/services/custom-type-service';
 import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
 
@@ -30,6 +31,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
   const router = useRouter();
   const colors = useThemeColors();
   const [entry, setEntry] = useState<PoopLogEntry | PissLogEntry | null>(null);
+  const [customTypes, setCustomTypes] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -50,9 +52,25 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
 
   useEffect(() => {
     logger.ui('Entry detail screen opened', { id, type });
-    loadEntry();
-    return () => { logger.ui('Entry detail screen closed', { id, type }); };
-  }, [loadEntry, id, type]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await getEntryById(id, type);
+        if (!cancelled) setEntry(result ?? null);
+      } catch {
+        if (!cancelled) setEntry(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    if (type === 'poop') {
+      getCustomTypes().then((t) => { if (!cancelled) setCustomTypes(t); }).catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+      logger.ui('Entry detail screen closed', { id, type });
+    };
+  }, [id, type]);
 
   const handleDelete = async () => {
     logger.period('Delete entry', { id, type });
@@ -96,19 +114,39 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
 
     if (type === 'poop') {
       const poopEntry = entry as PoopLogEntry;
-      const bristolType = poopEntry.typeId != null ? getBristolType(poopEntry.typeId) : null;
+      if (poopEntry.typeId != null) {
+        if (isCustomTypeId(poopEntry.typeId)) {
+          const customName = getCustomTypeName(poopEntry.typeId, customTypes);
+          return (
+            <View style={styles.section}>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Type</Text>
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailValue, { color: colors.text }]}>{customName}</Text>
+                <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>Custom type</Text>
+              </View>
+            </View>
+          );
+        }
+        const bristolType = getBristolType(poopEntry.typeId);
+        return (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Type</Text>
+            {bristolType ? (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailValue, { color: colors.text }]}>{bristolType.name}</Text>
+                <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.description}</Text>
+                <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.clinicalReference}</Text>
+              </View>
+            ) : (
+              <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No type selected</Text>
+            )}
+          </View>
+        );
+      }
       return (
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Type</Text>
-          {bristolType ? (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailValue, { color: colors.text }]}>{bristolType.name}</Text>
-              <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.description}</Text>
-              <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>{bristolType.clinicalReference}</Text>
-            </View>
-          ) : (
-            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No type selected</Text>
-          )}
+          <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No type selected</Text>
         </View>
       );
     } else {
@@ -156,7 +194,19 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        {/* Skeleton loader for entry detail */}
+        <View style={styles.skeletonHeader}>
+          <Skeleton width={60} height={20} borderRadius={4} />
+          <Skeleton width="40%" height={16} borderRadius={4} />
+        </View>
+        <View style={styles.skeletonSection}>
+          <Skeleton width="30%" height={14} borderRadius={4} />
+          <Skeleton width="60%" height={20} borderRadius={4} />
+        </View>
+        <View style={styles.skeletonSection}>
+          <Skeleton width="30%" height={14} borderRadius={4} />
+          <Skeleton width="80%" height={16} borderRadius={4} />
+        </View>
       </View>
     );
   }
@@ -229,7 +279,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Timestamp</Text>
           <Text style={[styles.detailValue, { color: colors.text }]}>
-            🕐 {formatEntryTime(entry.timestamp)}
+            {formatEntryTime(entry.timestamp)}
           </Text>
         </View>
 
@@ -238,7 +288,7 @@ export function EntryDetailScreen({ id, type }: EntryDetailScreenProps) {
           <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Location</Text>
           {entry.locationCity ? (
             <View>
-              <Text style={[styles.detailValue, { color: colors.text }]}>📍 {entry.locationCity}</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>{entry.locationCity}</Text>
               {entry.locationLat != null && entry.locationLng != null && (
                 <Text style={[styles.detailSubtext, { color: colors.textSecondary }]}>
                   {entry.locationLat.toFixed(4)}, {entry.locationLng.toFixed(4)}
@@ -285,6 +335,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  skeletonHeader: {
+    padding: 20,
+    gap: 8,
+  },
+  skeletonSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -310,9 +369,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },

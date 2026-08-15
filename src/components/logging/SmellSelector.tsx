@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SMELL_OPTIONS } from '@/constants/smell-options';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import type { SmellLevel } from '@/types/logging';
@@ -25,7 +25,11 @@ export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
       {SMELL_OPTIONS.map((option) => {
         const isSelected = selected === option.value;
         return (
@@ -55,7 +59,7 @@ export function SmellSelector({ selected, onSelect }: SmellSelectorProps) {
           </TouchableOpacity>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -63,6 +67,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: 8,
+    paddingRight: 8,
   },
   pill: {
     flexDirection: 'row',

@@ -1,28 +1,18 @@
-import { getDatabase, getSqliteDatabase } from '@/db';
-import { runMigrations } from '@/db/migrate';
+import { getDatabase } from '@/db';
 import { logger } from '@/utils/logger';
 
 /**
  * Initialize the application.
- * Orchestrates the startup sequence:
- * 1. Get the shared database connection (singleton)
- * 2. Run migrations on the raw SQLite handle
- *
- * This is the single entry point called on app launch.
+ * Ensures the database connection is established (encryption, WAL, Drizzle, migrations).
+ * Migrations run automatically inside getDatabase() on each newly opened DB.
  */
 export async function initializeApp() {
   logger.appInit('Starting app initialization...');
 
-  // Step 1: Initialize shared DB connection (encryption, WAL, Drizzle wrapper)
+  // Initialize DB connection (migrations run inside getDatabase)
   logger.appInit('Opening encrypted database...');
   await getDatabase();
-  logger.db('Database opened with encryption and WAL mode');
-
-  // Step 2: Run migrations on the raw SQLite handle
-  logger.db('Running migrations...');
-  const sqliteDb = await getSqliteDatabase();
-  await runMigrations(sqliteDb);
-  logger.db('Migrations completed');
+  logger.db('Database opened with encryption, WAL mode, and migrations');
 
   logger.appReady('App initialization complete');
   await logger.flush();

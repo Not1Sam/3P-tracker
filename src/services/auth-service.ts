@@ -1,5 +1,5 @@
 import { supabase } from '@/services/supabase-client';
-import type { User, AuthError } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 
 export interface AuthResult {
@@ -91,7 +91,7 @@ export async function getCurrentUser(): Promise<User | null> {
     }
     logger.auth(`User session found: ${user.id}`);
     return user;
-  } catch (e) {
+  } catch {
     logger.authError('Failed to get session');
     return null;
   }

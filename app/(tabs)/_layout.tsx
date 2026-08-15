@@ -1,27 +1,53 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useThemeColors } from '@/contexts/ThemeContext';
+import { useState, useCallback } from 'react';
+import { useThemeColors, useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 import { getUserGender } from '@/services/settings';
 
 export default function TabLayout() {
   const colors = useThemeColors();
-  const gender = getUserGender();
-  const showPeriodTab = gender === 'female';
+  const { mode } = useTheme();
+  const [showPeriodTab, setShowPeriodTab] = useState(() => getUserGender() === 'female');
+
+  // Re-read gender when any tab is focused (catches gender changes from ProfileSetup)
+  useFocusEffect(
+    useCallback(() => {
+      setShowPeriodTab(getUserGender() === 'female');
+    }, [])
+  );
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarInactiveTintColor: '#7C7A8A',
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          // Apple Design: Translucent material — semi-transparent with subtle border
+          backgroundColor: colors.surface + 'E6', // 90% opacity
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 0.5,
+          // Subtle elevation for depth
+          shadowColor: colors.text,
+          shadowOffset: { width: 0, height: -1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 8,
         },
         headerStyle: {
-          backgroundColor: colors.surface,
+          // Apple Design: Translucent header material
+          backgroundColor: colors.surface + 'E6',
+          shadowColor: colors.text,
+          shadowOffset: { width: 0, height: 0.5 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
         },
         headerTintColor: colors.text,
+        headerTitleStyle: {
+          // Apple Design: Tighter tracking for headers
+          letterSpacing: -0.3,
+          fontWeight: '600',
+        },
       }}
       screenListeners={{
         state: (e) => {
@@ -98,6 +124,16 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: colors.textSecondary,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="cog" size={size} color={color} />
           ),
           tabBarActiveTintColor: colors.textSecondary,
         }}

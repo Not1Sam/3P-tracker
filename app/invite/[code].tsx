@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { processInvite } from '@/services/social-service';
@@ -75,7 +76,7 @@ export default function InviteHandler() {
   if (status === 'error') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.emoji]}>😔</Text>
+        <MaterialCommunityIcons name="emoticon-sad-outline" size={64} color={colors.error} />
         <Text style={[styles.text, { color: colors.error }]}>
           {errorMessage || 'Invalid invite link'}
         </Text>
@@ -102,10 +103,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   text: {
     fontSize: 16,

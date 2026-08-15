@@ -1,8 +1,6 @@
 import * as Location from 'expo-location';
-import { createPoopLog as repoCreatePoopLog, getPoopLogs } from '@/db/repositories/poop-repository';
-import { createPissLog as repoCreatePissLog, getPissLogs } from '@/db/repositories/piss-repository';
-import { deletePoopLog } from '@/db/repositories/poop-repository';
-import { deletePissLog } from '@/db/repositories/piss-repository';
+import { createPoopLog as repoCreatePoopLog, getPoopLogs, deletePoopLog } from '@/db/repositories/poop-repository';
+import { createPissLog as repoCreatePissLog, getPissLogs, deletePissLog } from '@/db/repositories/piss-repository';
 import { logger } from '@/utils/logger';
 import { canLogEntry, incrementDailyCount } from '@/utils/rate-limiter';
 import type {
@@ -20,7 +18,11 @@ import type {
 export async function captureLocation(): Promise<CapturedLocation | null> {
   try {
     logger.db('Capturing location...');
-    const { status } = await Location.getForegroundPermissionsAsync();
+    let { status } = await Location.getForegroundPermissionsAsync();
+    if (status === 'undetermined') {
+      const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+      status = newStatus;
+    }
     if (status !== 'granted') {
       logger.db('Location permission not granted');
       return null;

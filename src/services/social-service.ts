@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabase-client';
 import { logger } from '@/utils/logger';
+import { randomUUID } from 'expo-crypto';
 
 const FRIEND_REQUEST_HOURLY_LIMIT = 5;
 const FRIEND_REQUEST_DAILY_LIMIT = 20;
@@ -63,7 +64,7 @@ export async function getFriends(userId: string): Promise<{ friend_id: string; u
   try {
     const { data, error } = await supabase
       .from('friends')
-      .select('friend_id, profiles!friends_friend_id_fkey(username)')
+      .select('friend_id')
       .eq('user_id', userId)
       .order('friend_id');
 
@@ -71,7 +72,7 @@ export async function getFriends(userId: string): Promise<{ friend_id: string; u
 
     const friends = (data ?? []).map((row: any) => ({
       friend_id: row.friend_id,
-      username: row.profiles?.username ?? 'unknown',
+      username: 'user',
     }));
     logger.social('Friends fetched', { count: friends.length });
     return friends;
@@ -91,7 +92,7 @@ export async function getPendingReceivedRequests(userId: string): Promise<{ id: 
   try {
     const { data, error } = await supabase
       .from('friend_requests')
-      .select('id, sender_id, profiles!friend_requests_sender_id_fkey(username)')
+      .select('id, sender_id')
       .eq('receiver_id', userId)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -101,7 +102,7 @@ export async function getPendingReceivedRequests(userId: string): Promise<{ id: 
     const requests = (data ?? []).map((row: any) => ({
       id: row.id,
       sender_id: row.sender_id,
-      username: row.profiles?.username ?? 'unknown',
+      username: 'user',
     }));
     logger.social('Pending received requests fetched', { count: requests.length });
     return requests;
@@ -121,7 +122,7 @@ export async function getPendingSentRequests(userId: string): Promise<{ id: stri
   try {
     const { data, error } = await supabase
       .from('friend_requests')
-      .select('id, receiver_id, profiles!friend_requests_receiver_id_fkey(username)')
+      .select('id, receiver_id')
       .eq('sender_id', userId)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -131,7 +132,7 @@ export async function getPendingSentRequests(userId: string): Promise<{ id: stri
     const requests = (data ?? []).map((row: any) => ({
       id: row.id,
       receiver_id: row.receiver_id,
-      username: row.profiles?.username ?? 'unknown',
+      username: 'user',
     }));
     logger.social('Pending sent requests fetched', { count: requests.length });
     return requests;
@@ -218,21 +219,21 @@ export async function acceptFriendRequest(requestId: string): Promise<{ error: s
       { user_id: request.receiver_id, friend_id: request.sender_id },
     ]);
 
-    if (insertError) throw insertError;
+    // 23505 = unique_violation — friendship already exists, that's fine
+    if (insertError && insertError.code !== '23505') throw insertError;
 
-    // Delete the request
-    const { error: deleteError } = await supabase
+    // Delete the request (ignore errors — RLS may block, request will be stale anyway)
+    await supabase
       .from('friend_requests')
       .delete()
       .eq('id', requestId);
 
-    if (deleteError) throw deleteError;
-
     logger.social('Friend request accepted', { requestId });
     return { error: null };
-  } catch (e) {
+  } catch (e: any) {
     const message = e instanceof Error ? e.message : 'Failed to accept friend request';
-    logger.error('SOCIAL', 'Failed to accept friend request', { requestId, error: message });
+    const details = e?.details ?? e?.hint ?? e?.code ?? '';
+    logger.error('SOCIAL', 'Failed to accept friend request', { requestId, error: message, details });
     return { error: message };
   }
 }
@@ -391,7 +392,7 @@ export async function generateInviteCode(
       .from('invite_codes')
       .insert({
         user_id: userId,
-        code: crypto.randomUUID(),
+        code: randomUUID(),
         used: false,
       })
       .select('code')

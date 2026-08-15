@@ -7,6 +7,7 @@ import {
   Switch,
   StyleSheet,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { FlowLevelSelector } from '@/components/period/FlowLevelSelector';
@@ -75,7 +76,7 @@ export default function PeriodScreen() {
       logger.period('PeriodScreen: data loaded', {
         hasOverview: !!overview,
         hasPhase: !!phase,
-        hasStats: !!stats,
+        hasStats: !!periodStats,
         entryCount: entries.length,
       });
     } catch (e) {
@@ -239,9 +240,15 @@ export default function PeriodScreen() {
               </View>
             </View>
           ) : (
-            <Text style={[styles.emptyInsights, { color: colors.textTertiary }]}>
-              Log more periods for insights
-            </Text>
+            <View style={styles.emptyInsightsContainer}>
+              <MaterialCommunityIcons name="chart-bar" size={48} color={colors.textTertiary} />
+              <Text style={[styles.emptyInsights, { color: colors.textSecondary }]}>
+                Log more periods for insights
+              </Text>
+              <Text style={[styles.emptyInsightsSubtext, { color: colors.textTertiary }]}>
+                Track your cycle to see predictions and patterns
+              </Text>
+            </View>
           )}
         </View>
 
@@ -288,9 +295,15 @@ export default function PeriodScreen() {
               </View>
             ))
           ) : (
-            <Text style={[styles.emptyEntries, { color: colors.textTertiary }]}>
-              No entries yet
-            </Text>
+            <View style={styles.emptyEntriesContainer}>
+              <MaterialCommunityIcons name="note-text-outline" size={48} color={colors.textTertiary} />
+              <Text style={[styles.emptyEntries, { color: colors.textSecondary }]}>
+                No entries yet
+              </Text>
+              <Text style={[styles.emptyEntriesSubtext, { color: colors.textTertiary }]}>
+                Tap the log button to record your period
+              </Text>
+            </View>
           )}
         </View>
 
@@ -380,9 +393,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  emptyInsightsContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
   emptyInsights: {
-    fontSize: 14,
-    fontStyle: 'italic',
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  emptyInsightsSubtext: {
+    fontSize: 13,
   },
   privacyNote: {
     fontSize: 13,
@@ -402,9 +423,17 @@ const styles = StyleSheet.create({
   entryDetail: {
     fontSize: 13,
   },
+  emptyEntriesContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
   emptyEntries: {
-    fontSize: 14,
-    fontStyle: 'italic',
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  emptyEntriesSubtext: {
+    fontSize: 13,
   },
   reminderRow: {
     flexDirection: 'row',

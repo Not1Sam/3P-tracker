@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getEntriesForDate, deleteEntryWithUndo } from '@/services/history-service';
+import { getEntriesForDate } from '@/services/history-service';
 import { formatDateHeader } from '@/utils/date-helpers';
 import { EntryCard } from '@/components/history/EntryCard';
-import { Toast } from '@/components/common/Toast';
 import { SkeletonList } from '@/components/common/Skeleton';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 import type { PoopLogEntry, PissLogEntry, LogType } from '@/types/logging';
@@ -23,11 +23,8 @@ export default function DayDetailScreen() {
   const [poopEntries, setPoopEntries] = useState<PoopLogEntry[]>([]);
   const [pissEntries, setPissEntries] = useState<PissLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [pendingUndo, setPendingUndo] = useState<(() => void) | null>(null);
 
-  const dateObj = date ? new Date(date + 'T12:00:00') : new Date();
+  const dateObj = useMemo(() => date ? new Date(date + 'T12:00:00') : new Date(), [date]);
 
   useEffect(() => {
     logger.navScreen(`dayDetail: ${date}`);
@@ -37,8 +34,9 @@ export default function DayDetailScreen() {
     if (!date) return;
     setLoading(true);
     try {
+      const d = new Date(date + 'T12:00:00');
       logger.dbRead('entriesForDate', { date });
-      const result = await getEntriesForDate(dateObj);
+      const result = await getEntriesForDate(d);
       setPoopEntries(result.poop);
       setPissEntries(result.piss);
       logger.dbRead('entriesForDateComplete', { date, poop: result.poop.length, piss: result.piss.length });
@@ -47,45 +45,21 @@ export default function DayDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [date, dateObj]);
+  }, [date]);
 
   useEffect(() => {
     loadEntries();
   }, [loadEntries]);
 
-  const handleEntryPress = (entry: PoopLogEntry | PissLogEntry, type: LogType) => {
+  const handleEntryPress = useCallback((entry: PoopLogEntry | PissLogEntry, type: LogType) => {
     logger.uiAction('dayEntryPress', { entryId: entry.id, logType: type, date });
     router.push(`/entry/${entry.id}?type=${type}`);
-  };
+  }, [date, router]);
 
-  const handleDelete = (id: string, type: LogType) => {
-    logger.uiAction('dayEntryDelete', { entryId: id, logType: type, date });
-    deleteEntryWithUndo(
-      id,
-      type,
-      (msg, onUndo) => {
-        setToastMessage(msg);
-        setPendingUndo(() => onUndo);
-        setToastVisible(true);
-      },
-      () => {
-        loadEntries();
-      }
-    );
-  };
-
-  const handleUndo = () => {
-    logger.uiAction('dayEntryUndo');
-    if (pendingUndo) {
-      pendingUndo();
-      setPendingUndo(null);
-    }
-  };
-
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     logger.uiAction('dayDetailBack');
     router.back();
-  };
+  }, [router]);
 
   const formattedDate = formatDateHeader(dateObj);
 
@@ -111,7 +85,10 @@ export default function DayDetailScreen() {
         <ScrollView style={styles.content}>
           {poopEntries.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionHeader, { color: colors.text }]}>💩 Poop</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialCommunityIcons name="emoticon-poop" size={18} color={colors.poop} />
+                <Text style={[styles.sectionHeader, { color: colors.text }]}> Poop</Text>
+              </View>
               {poopEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
@@ -125,7 +102,10 @@ export default function DayDetailScreen() {
 
           {pissEntries.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionHeader, { color: colors.text }]}>🚽 Piss</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialCommunityIcons name="toilet" size={18} color={colors.piss} />
+                <Text style={[styles.sectionHeader, { color: colors.text }]}> Piss</Text>
+              </View>
               {pissEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
@@ -139,19 +119,12 @@ export default function DayDetailScreen() {
 
           {poopEntries.length === 0 && pissEntries.length === 0 && (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>📝</Text>
+              <MaterialCommunityIcons name="note-text-outline" size={64} color={colors.textTertiary} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No entries for this day</Text>
             </View>
           )}
         </ScrollView>
       )}
-
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        onUndo={handleUndo}
-        onDismiss={() => setToastVisible(false)}
-      />
     </View>
   );
 }
@@ -199,10 +172,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 80,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 16,

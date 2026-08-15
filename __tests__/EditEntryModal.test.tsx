@@ -7,6 +7,10 @@
  */
 
 // Mock react-native
+import { EditEntryModal } from '@/screens/EditEntryModal';
+import { updateEntry } from '@/services/history-service';
+import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
+
 jest.mock('react-native', () => {
   const createComponent = (name: string) => {
     const Component = ({ children, ...props }: any) => ({ type: name, props: { children, ...props } });
@@ -147,7 +151,7 @@ jest.mock('@/services/history-service', () => ({
 
 // Mock date-helpers
 jest.mock('@/utils/date-helpers', () => ({
-  formatEntryTime: jest.fn((date: Date) => 'Aug 8, 3:45 PM'),
+  formatEntryTime: jest.fn((_date: Date) => 'Aug 8, 3:45 PM'),
 }));
 
 // Mock selectors
@@ -166,10 +170,6 @@ jest.mock('@/components/logging/SmellSelector', () => ({
 jest.mock('@/components/logging/CommentField', () => ({
   CommentField: (props: any) => ({ type: 'CommentField', props }),
 }));
-
-import { EditEntryModal } from '@/screens/EditEntryModal';
-import { updateEntry } from '@/services/history-service';
-import type { PoopLogEntry, PissLogEntry } from '@/types/logging';
 
 beforeEach(() => {
   mockStateValues = [];

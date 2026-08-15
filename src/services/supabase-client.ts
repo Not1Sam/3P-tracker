@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
+import { SafeStorage } from '@/utils/storage';
 import { Database } from '@/db/supabase-schema';
 import { logger } from '@/utils/logger';
 
@@ -9,16 +9,9 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 logger.appInit('Initializing Supabase client');
 
-// SecureStore adapter for Supabase auth token storage
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
-
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: ExpoSecureStoreAdapter,
+    storage: SafeStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

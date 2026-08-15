@@ -131,12 +131,6 @@ export function calculateCycleData(logs: PeriodLogEntry[]): CycleData {
     ),
     confidence,
   };
-  logger.period('Cycle data calculated', {
-    cycleStartDates: startDates.length,
-    averageCycleLength,
-    confidence,
-    nextPeriodPrediction: recentCycles.length >= MIN_CYCLES_FOR_PREDICTION,
-  });
 }
 
 /**

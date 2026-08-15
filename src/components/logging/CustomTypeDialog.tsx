@@ -123,8 +123,10 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   cancelButtonText: {
     fontWeight: '600',

@@ -8,6 +8,20 @@
  */
 
 // Mock react-native so module imports work in node environment
+// Import components and constants
+import { BRISTOL_TYPES } from '@/constants/bristol-chart';
+import { PISS_COLORS } from '@/constants/color-palette';
+import { SMELL_OPTIONS } from '@/constants/smell-options';
+import { FloatingActionButton } from '@/components/common/FloatingActionButton';
+import { BottomSheet } from '@/components/common/BottomSheet';
+import { Toast } from '@/components/common/Toast';
+import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
+import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
+import { SmellSelector } from '@/components/logging/SmellSelector';
+import { CommentField } from '@/components/logging/CommentField';
+import { LocationStatus } from '@/components/logging/LocationStatus';
+import type { SmellLevel } from '@/types/logging';
+
 jest.mock('react-native', () => {
   const createComponent = (name: string) => {
     const Component = ({ children, ...props }: any) => ({ type: name, props: { children, ...props } });
@@ -49,7 +63,6 @@ jest.mock('react-native', () => {
 });
 
 // Mock React hooks for non-rendering test environment
-const originalReact = jest.requireActual('react');
 let mockStateValues: any[] = [];
 let mockStateIndex = 0;
 
@@ -145,20 +158,6 @@ jest.mock('@/contexts/ThemeContext', () => {
     useThemeSpacing: () => playfulTheme.spacing,
   };
 });
-
-// Import components and constants
-import { BRISTOL_TYPES } from '@/constants/bristol-chart';
-import { PISS_COLORS } from '@/constants/color-palette';
-import { SMELL_OPTIONS } from '@/constants/smell-options';
-import { FloatingActionButton } from '@/components/common/FloatingActionButton';
-import { BottomSheet } from '@/components/common/BottomSheet';
-import { Toast } from '@/components/common/Toast';
-import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
-import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
-import { SmellSelector } from '@/components/logging/SmellSelector';
-import { CommentField } from '@/components/logging/CommentField';
-import { LocationStatus } from '@/components/logging/LocationStatus';
-import type { SmellLevel } from '@/types/logging';
 
 beforeEach(() => {
   mockStateValues = [];

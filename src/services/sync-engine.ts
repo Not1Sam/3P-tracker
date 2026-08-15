@@ -1,7 +1,7 @@
 import { InteractionManager } from 'react-native';
 import { getDatabase } from '@/db';
 import { poopLogs, pissLogs } from '@/db/schema';
-import { canSync, getSyncableTables } from '@/services/privacy-tiers';
+import { getSyncableTables } from '@/services/privacy-tiers';
 import { getLastSyncTimestamp, setLastSyncTimestamp } from '@/services/settings';
 import { supabase } from '@/services/supabase-client';
 import { getCurrentUser } from '@/services/auth-service';
@@ -223,7 +223,7 @@ async function retryWithBackoff(
   setTimeout(async () => {
     try {
       await fn();
-    } catch (error) {
+    } catch {
       await retryWithBackoff(fn, attempt + 1, maxAttempts);
     }
   }, delay);

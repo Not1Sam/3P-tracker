@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { updateEntry } from '@/services/history-service';
 import { formatEntryTime } from '@/utils/date-helpers';
 import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
@@ -105,7 +106,7 @@ export function EditEntryModal({
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+            <MaterialCommunityIcons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -161,9 +162,9 @@ export function EditEntryModal({
           {/* Read-only: Timestamp (D-06: locked) */}
           <View style={[styles.readOnlySection, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
             <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Timestamp</Text>
-            <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>
-              🕐 {formatEntryTime(entry.timestamp)}
-            </Text>
+              <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>
+                {formatEntryTime(entry.timestamp)}
+              </Text>
             <Text style={[styles.readOnlyHint, { color: colors.textTertiary }]}>Locked — cannot be edited</Text>
           </View>
 
@@ -171,7 +172,7 @@ export function EditEntryModal({
           <View style={[styles.readOnlySection, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
             <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Location</Text>
             {entry.locationCity ? (
-              <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>📍 {entry.locationCity}</Text>
+              <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>{entry.locationCity}</Text>
             ) : (
               <Text style={[styles.readOnlyText, { color: colors.textSecondary }]}>No location recorded</Text>
             )}
@@ -217,9 +218,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },

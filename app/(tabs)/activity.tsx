@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { getFriendActivity, type ActivityItem } from '@/services/activity-service';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -61,7 +62,8 @@ export default function ActivityScreen() {
         contentContainerStyle={items.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={
           <EmptyState
-            emoji="🎉"
+            iconName="party-popper"
+            iconColor={colors.primary}
             title="No activity yet"
             subtitle="Friend milestones will appear here"
           />

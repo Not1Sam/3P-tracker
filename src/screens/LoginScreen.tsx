@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
@@ -67,7 +68,7 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.emoji}>👋</Text>
+          <MaterialCommunityIcons name="hand-wave" size={64} color={colors.primary} />
           <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Sign in to sync your data
@@ -94,6 +95,9 @@ export function LoginScreen({ onSwitchToRegister, onForgotPassword, onSuccess }:
               autoCorrect={false}
               editable={!loading}
             />
+            <Text style={[styles.helperText, { color: colors.textTertiary }]}>
+              We&apos;ll never share your email
+            </Text>
           </View>
 
           <View style={styles.inputGroup}>
@@ -165,10 +169,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -200,6 +200,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
   },
   forgotPassword: {
     alignSelf: 'flex-end',

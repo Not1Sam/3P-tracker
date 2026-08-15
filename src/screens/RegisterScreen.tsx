@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
@@ -77,7 +78,7 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.emoji}>🎉</Text>
+          <MaterialCommunityIcons name="party-popper" size={64} color={colors.primary} />
           <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Join the community and track your progress
@@ -104,6 +105,9 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
               autoCorrect={false}
               editable={!loading}
             />
+            <Text style={[styles.helperText, { color: colors.textTertiary }]}>
+              Used for account recovery only
+            </Text>
           </View>
 
           <View style={styles.inputGroup}>
@@ -117,6 +121,9 @@ export function RegisterScreen({ onSwitchToLogin, onSuccess }: RegisterScreenPro
               secureTextEntry
               editable={!loading}
             />
+            <Text style={[styles.helperText, { color: colors.textTertiary }]}>
+              Minimum 6 characters
+            </Text>
           </View>
 
           <View style={styles.inputGroup}>
@@ -178,10 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -213,6 +216,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
   },
   button: {
     borderRadius: 12,

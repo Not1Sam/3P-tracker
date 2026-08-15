@@ -8,6 +8,7 @@ import {
   resetPassword as resetPasswordFn,
   onAuthStateChange,
 } from '@/services/auth-service';
+import { setCurrentUserId } from '@/db';
 import { logger } from '@/utils/logger';
 
 interface AuthContextValue {
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Get initial session
     getCurrentUser().then((u) => {
+      setCurrentUserId(u?.id ?? null);
       setUser(u);
       setLoading(false);
       logger.auth('Initial session loaded', { userId: u?.id ?? 'none' });
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Listen for auth changes
     const unsubscribe = onAuthStateChange((u) => {
+      setCurrentUserId(u?.id ?? null);
       setUser(u);
       setLoading(false);
       logger.auth('Auth state changed', { userId: u?.id ?? 'signedOut' });

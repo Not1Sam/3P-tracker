@@ -1,4 +1,20 @@
 // Mock expo-location
+import * as Location from 'expo-location';
+import {
+  captureLocation,
+  createPoopLog,
+  createPissLog,
+  undoLastLog,
+} from '@/services/logging-service';
+import {
+  createPoopLog as repoCreatePoopLog,
+  deletePoopLog,
+} from '@/db/repositories/poop-repository';
+import {
+  createPissLog as repoCreatePissLog,
+  deletePissLog,
+} from '@/db/repositories/piss-repository';
+
 jest.mock('expo-location', () => ({
   getForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
@@ -16,22 +32,6 @@ jest.mock('@/db/repositories/piss-repository', () => ({
   createPissLog: jest.fn(),
   deletePissLog: jest.fn(),
 }));
-
-import * as Location from 'expo-location';
-import {
-  captureLocation,
-  createPoopLog,
-  createPissLog,
-  undoLastLog,
-} from '@/services/logging-service';
-import {
-  createPoopLog as repoCreatePoopLog,
-  deletePoopLog,
-} from '@/db/repositories/poop-repository';
-import {
-  createPissLog as repoCreatePissLog,
-  deletePissLog,
-} from '@/db/repositories/piss-repository';
 
 beforeEach(() => {
   jest.clearAllMocks();

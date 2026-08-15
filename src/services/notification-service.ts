@@ -19,6 +19,7 @@ let Notifications: typeof import('expo-notifications') | null = null;
 let notificationsAvailable = false;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
   notificationsAvailable = true;
 } catch {

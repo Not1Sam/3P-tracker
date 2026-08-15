@@ -1,6 +1,6 @@
-import { type TextStyle, type ViewStyle } from 'react-native';
+import { type TextStyle } from 'react-native';
 
-export type ThemeMode = 'playful' | 'clinical';
+export type ThemeMode = 'light' | 'dark';
 
 export interface ThemeColors {
   // Primary
@@ -75,6 +75,8 @@ export interface ThemeFontSizes {
   lg: number;
   xl: number;
   xxl: number;
+  /** Apple Design: Display size for hero text */
+  display: number;
 }
 
 export interface ThemeFontWeight {
@@ -84,6 +86,42 @@ export interface ThemeFontWeight {
   bold: TextStyle['fontWeight'];
 }
 
+// Apple Design: Typography tokens — tracking (letter-spacing) and leading (line-height)
+export interface ThemeTypography {
+  /** Letter-spacing for each size tier. Large text gets negative tracking, small gets positive. */
+  tracking: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+    xxl: number;
+    display: number;
+  };
+  /** Line-height multiplier for each size tier. Tighter for large, looser for small. */
+  leading: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+    xxl: number;
+    display: number;
+  };
+}
+
+// Claymorphism: Multi-layer shadow system for depth
+export interface ThemeShadows {
+  /** Subtle shadow for cards and surfaces */
+  sm: TextStyle;
+  /** Medium shadow for elevated elements */
+  md: TextStyle;
+  /** Large shadow for modals and sheets */
+  lg: TextStyle;
+  /** Clay depth shadow — multi-layer for 3D effect */
+  clay: TextStyle;
+}
+
 export interface Theme {
   mode: ThemeMode;
   colors: ThemeColors;
@@ -91,84 +129,100 @@ export interface Theme {
   borderRadius: ThemeBorderRadius;
   fontSizes: ThemeFontSizes;
   fontWeight: ThemeFontWeight;
+  typography: ThemeTypography;
+  shadows: ThemeShadows;
 }
 
-// ─── Playful Theme ──────────────────────────────────────
+// ─── Light Theme ──────────────────────────────────────
+// Design System: Claymorphism (Mobile)
+// Style: Soft, bubbly, playful, rounded, tactile
+// Colors: Calming lavender + wellness green
 
-const playfulColors: ThemeColors = {
-  primary: '#8B4513',
-  primaryLight: '#A0522D',
-  primaryDark: '#6B3410',
+const lightColors: ThemeColors = {
+  // Primary: Lavender (#8B5CF6)
+  primary: '#8B5CF6',
+  primaryLight: '#A78BFA',
+  primaryDark: '#7C3AED',
 
-  accent: '#FF6B6B',
-  accentLight: '#FF8E8E',
+  // Accent: Wellness Green (#059669) — WCAG 3:1 compliant
+  accent: '#059669',
+  accentLight: '#34D399',
 
-  success: '#4CAF50',
-  warning: '#FFC107',
-  error: '#F44336',
-
-  background: '#FFF8F0',
-  surface: '#FFFFFF',
-  surfaceVariant: '#FFF0E6',
-
-  text: '#333333',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
-  textInverse: '#FFFFFF',
-
-  border: '#E8DDD0',
-  borderLight: '#F0E8DE',
-
-  poop: '#8B4513',
-  poopLight: '#D2B48C',
-
-  piss: '#FFD700',
-  pissLight: '#FFF3B0',
-
-  period: '#E88B9D',      // D-23: Rose/coral
-  periodLight: '#F5D5DD', // D-24: Light pink
-
-  calendarAccent: '#FF6B6B',
-
-  disabled: '#B0C4DE',
-};
-
-const clinicalColors: ThemeColors = {
-  primary: '#2563EB',
-  primaryLight: '#3B82F6',
-  primaryDark: '#1D4ED8',
-
-  accent: '#0EA5E9',
-  accentLight: '#38BDF8',
-
-  success: '#16A34A',
+  // Semantic
+  success: '#10B981',
   warning: '#F59E0B',
   error: '#DC2626',
 
-  background: '#F8FAFC',
+  // Background: Soft lavender tint
+  background: '#FAF5FF',
   surface: '#FFFFFF',
-  surfaceVariant: '#F1F5F9',
+  surfaceVariant: '#F5F3FF',
 
-  text: '#1E293B',
-  textSecondary: '#475569',
-  textTertiary: '#94A3B8',
+  // Text
+  text: '#1E1B4B',       // Deep indigo for contrast
+  textSecondary: '#4C1D95',
+  textTertiary: '#7C3AED',
   textInverse: '#FFFFFF',
 
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
+  // Border
+  border: '#EDE9FE',
+  borderLight: '#F5F3FF',
 
-  poop: '#78350F',
+  // Poop: Brown tones
+  poop: '#92400E',
   poopLight: '#D97706',
 
+  // Piss: Gold tones
   piss: '#EAB308',
   pissLight: '#FDE047',
 
-  period: '#E88B9D',
-  periodLight: '#F5D5DD',
+  // Period: Rose/coral
+  period: '#F472B6',
+  periodLight: '#FBCFE8',
 
-  calendarAccent: '#2563EB',
+  // Calendar accent
+  calendarAccent: '#8B5CF6',
 
-  disabled: '#CBD5E1',
+  // Disabled
+  disabled: '#C4B5FD',
+};
+
+const darkColors: ThemeColors = {
+  primary: '#818CF8',
+  primaryLight: '#A5B4FC',
+  primaryDark: '#6366F1',
+
+  accent: '#34D399',
+  accentLight: '#6EE7B7',
+
+  success: '#34D399',
+  warning: '#FBBF24',
+  error: '#F87171',
+
+  background: '#0F0D1A',
+  surface: '#1A1726',
+  surfaceVariant: '#231F30',
+
+  text: '#F1F0F5',
+  textSecondary: '#C4C1D0',
+  textTertiary: '#7C7A8A',
+  textInverse: '#0F0D1A',
+
+  border: '#2D2A3A',
+  borderLight: '#231F30',
+
+  poop: '#D97706',
+  poopLight: '#FBBF24',
+
+  piss: '#FACC15',
+  pissLight: '#FDE68A',
+
+  period: '#FB7185',
+  periodLight: '#FECDD3',
+
+  calendarAccent: '#818CF8',
+
+  disabled: '#3D3A4A',
 };
 
 // ─── Shared Tokens ──────────────────────────────────────
@@ -182,11 +236,12 @@ const spacing: ThemeSpacing = {
   xxl: 48,
 };
 
+// Claymorphism: Large, soft corners for tactile feel
 const borderRadius: ThemeBorderRadius = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
   full: 999,
 };
 
@@ -197,6 +252,7 @@ const fontSizes: ThemeFontSizes = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  display: 32,
 };
 
 const fontWeight: ThemeFontWeight = {
@@ -206,25 +262,117 @@ const fontWeight: ThemeFontWeight = {
   bold: '700',
 };
 
-// ─── Theme Map ──────────────────────────────────────────
-
-export const themes: Record<ThemeMode, Theme> = {
-  playful: {
-    mode: 'playful',
-    colors: playfulColors,
-    spacing,
-    borderRadius,
-    fontSizes,
-    fontWeight,
+// Apple Design: Typography — size-specific tracking and leading
+// Large text gets negative tracking (letters read too far apart as they grow)
+// Small text gets slightly positive tracking for legibility
+const typography: ThemeTypography = {
+  tracking: {
+    xs: 0.2,    // Small labels — slightly positive for legibility
+    sm: 0.1,
+    md: 0,       // Body — neutral
+    lg: -0.2,    // Subheadings — slight negative
+    xl: -0.3,    // Headings — negative
+    xxl: -0.4,   // Titles — tighter
+    display: -0.5, // Hero text — tightest
   },
-  clinical: {
-    mode: 'clinical',
-    colors: clinicalColors,
-    spacing,
-    borderRadius,
-    fontSizes,
-    fontWeight,
+  leading: {
+    xs: 1.4,     // Small text — more breathing room
+    sm: 1.35,
+    md: 1.5,     // Body — comfortable
+    lg: 1.3,     // Subheadings — tighter
+    xl: 1.2,     // Headings — tight
+    xxl: 1.15,
+    display: 1.05, // Hero text — very tight
   },
 };
 
-export const defaultTheme: Theme = themes.playful;
+// Claymorphism: Multi-layer shadow system for 3D depth (light mode uses purple-tinted shadows)
+const shadows: ThemeShadows = {
+  sm: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  clay: {
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+};
+
+// Dark mode shadows — subtle, minimal
+const darkShadows: ThemeShadows = {
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  clay: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+};
+
+// ─── Theme Map ──────────────────────────────────────────
+
+export const themes: Record<ThemeMode, Theme> = {
+  light: {
+    mode: 'light',
+    colors: lightColors,
+    spacing,
+    borderRadius,
+    fontSizes,
+    fontWeight,
+    typography,
+    shadows,
+  },
+  dark: {
+    mode: 'dark',
+    colors: darkColors,
+    spacing,
+    borderRadius,
+    fontSizes,
+    fontWeight,
+    typography,
+    shadows: darkShadows,
+  },
+};
+
+export const defaultTheme: Theme = themes.light;

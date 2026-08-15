@@ -67,17 +67,26 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
 
     const { data, error } = await supabase
       .from('activity_feed')
-      .select('id, user_id, type, message, created_at, profiles!activity_feed_user_id_fkey(username)')
+      .select('id, user_id, type, message, created_at')
       .in('user_id', friendIds)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
 
+    // Fetch usernames separately (FK is on auth.users, not profiles)
+    const userIds = [...new Set((data ?? []).map((r: any) => r.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .in('id', userIds);
+
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.username]));
+
     const activity = (data ?? []).map((row: any) => ({
       id: row.id,
       userId: row.user_id,
-      username: row.profiles?.username ?? 'unknown',
+      username: profileMap.get(row.user_id) ?? 'unknown',
       type: row.type,
       message: row.message,
       createdAt: row.created_at,
@@ -85,7 +94,8 @@ export async function getFriendActivity(limit = 50): Promise<ActivityItem[]> {
     logger.db('Friend activity fetched', { count: activity.length });
     return activity;
   } catch (e) {
-    logger.dbError('Failed to fetch friend activity', { error: e instanceof Error ? e.message : 'Unknown' });
+    const errorMsg = e instanceof Error ? e.message : typeof e === 'object' ? JSON.stringify(e) : String(e);
+    logger.dbError('Failed to fetch friend activity', { error: errorMsg });
     return [];
   }
 }

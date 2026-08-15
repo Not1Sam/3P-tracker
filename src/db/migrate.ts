@@ -1,4 +1,3 @@
-import * as SQLite from 'expo-sqlite';
 import { logger } from '@/utils/logger';
 
 interface Migration {
@@ -83,7 +82,12 @@ CREATE TABLE IF NOT EXISTS _journal (
  * Checks the _journal table for applied migrations, runs pending ones idempotently,
  * and records completion.
  */
-export async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
+export async function runMigrations(db: any): Promise<void> {
+  if (!db) {
+    logger.db('Skipping migrations — no database (web preview mode)');
+    return;
+  }
+
   logger.db('Starting database migrations');
 
   // Ensure _journal table exists
@@ -96,8 +100,8 @@ export async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
   `);
 
   // Get applied migrations
-  const journal = await db.getAllAsync<{ idx: number }>('SELECT idx FROM _journal');
-  const appliedMigrations = new Set(journal.map((j) => j.idx));
+  const journal = await db.getAllAsync('SELECT idx FROM _journal') as { idx: number }[];
+  const appliedMigrations = new Set(journal.map((j: { idx: number }) => j.idx));
 
   logger.db('Migration journal loaded', { applied: Array.from(appliedMigrations) });
 

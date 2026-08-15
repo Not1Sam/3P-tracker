@@ -13,6 +13,7 @@ import { PWAInstallHint } from '@/components/PWAInstallHint';
 import { initializeApp } from '@/services/app-init';
 import { checkForUpdate } from '@/services/update-checker';
 import { syncLeaderboards } from '@/services/leaderboard-service';
+import { runMonthlySync } from '@/services/sync-engine';
 import { checkAutoBackup } from '@/services/backup-service';
 import { logger } from '@/utils/logger';
 
@@ -59,6 +60,9 @@ export default function RootLayout() {
       logger.appInit('RootLayout: Running post-init tasks');
       checkForUpdate().catch((e) => {
         logger.syncError('Update check failed', { error: e });
+      });
+      runMonthlySync().catch((e) => {
+        logger.syncError('Monthly sync failed', { error: e });
       });
       syncLeaderboards().catch((e) => {
         logger.syncError('Leaderboard sync failed', { error: e });
@@ -122,7 +126,9 @@ export default function RootLayout() {
               <PWAInstallHint />
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="entry" options={{ headerShown: false }} />
+                <Stack.Screen name="entry/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="entry/day/[date]" options={{ headerShown: false }} />
+                <Stack.Screen name="invite/[code]" options={{ headerShown: false }} />
               </Stack>
             </NetworkProvider>
           </ProfileProvider>

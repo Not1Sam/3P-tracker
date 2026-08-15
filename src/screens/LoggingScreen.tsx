@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BristolTypeSelector } from '@/components/logging/BristolTypeSelector';
 import { ColorSwatchSelector } from '@/components/logging/ColorSwatchSelector';
@@ -29,11 +30,9 @@ import {
 import {
   getCustomTypes,
   createCustomType,
-} from '@/db/repositories/custom-type-repository';
-import {
   getCustomColors,
   createCustomColor,
-} from '@/db/repositories/custom-type-repository';
+} from '@/services/custom-type-service';
 import type {
   LogType,
   SmellLevel,
@@ -154,20 +153,18 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         return;
       }
 
-      // Success — trigger haptic feedback (try/catch — haptics may not be available)
+      // Success — trigger haptic feedback
       try {
         const Haptics = await import('expo-haptics');
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
         );
-      } catch {
-        // Haptics not available — skip silently
-      }
+      } catch {}
 
       logger.periodAction('Save entry success', { type, id: result.id });
       setSaved(true);
       setLastSavedId(result.id);
-      setToastMessage('✅ Logged!');
+      setToastMessage('Logged!');
       setShowToast(true);
       setSaving(false);
 
@@ -243,7 +240,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
           message={toastMessage}
           onDismiss={() => setUndoToast(false)}
         />
-        <Text style={styles.savedEmoji}>✅</Text>
+        <MaterialCommunityIcons name="check-circle" size={64} color={colors.success} />
         <Text style={[styles.savedText, { color: colors.text }]}>Entry saved!</Text>
       </View>
     );
@@ -298,7 +295,7 @@ export function LoggingScreen({ type, onClose, onSaved }: LoggingScreenProps) {
         style={styles.timestampRow}
         accessibilityLabel={`Timestamp: ${formatTime(timestamp)}`}
       >
-        <Text style={styles.timestampIcon}>🕐</Text>
+        <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textTertiary} />
         <Text style={[styles.timestampText, { color: colors.textSecondary }]}>{formatTime(timestamp)}</Text>
       </TouchableOpacity>
 
@@ -392,9 +389,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -409,10 +406,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  timestampIcon: {
-    fontSize: 16,
-    marginRight: 8,
   },
   timestampText: {
     fontSize: 14,
@@ -463,10 +456,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  savedEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   savedText: {
     fontSize: 18,

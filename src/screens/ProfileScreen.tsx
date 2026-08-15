@@ -8,11 +8,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
+import { Skeleton } from '@/components/common/Skeleton';
 import { ProfileSetup } from '@/components/social/ProfileSetup';
 import { FriendListScreen } from '@/screens/FriendListScreen';
 import { QRCodeDisplay } from '@/components/social/QRCodeDisplay';
@@ -26,7 +28,7 @@ export function ProfileScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, friendCount, pendingReceivedCount, inviteCode, refreshInviteCode } = useProfile();
+  const { profile, loading: profileLoading, friendCount, pendingReceivedCount, inviteCode, refreshProfile, refreshInviteCode } = useProfile();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [showFriendList, setShowFriendList] = useState(false);
@@ -35,7 +37,7 @@ export function ProfileScreen() {
   useEffect(() => {
     logger.ui('Profile screen opened', { isAuthenticated });
     return () => { logger.ui('Profile screen closed'); };
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAuthSuccess = () => {
     logger.auth('Auth modal closed after success');
@@ -52,8 +54,9 @@ export function ProfileScreen() {
   if (authLoading || profileLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading...</Text>
+        <Skeleton width={96} height={96} borderRadius={48} />
+        <Skeleton width={120} height={20} borderRadius={4} />
+        <Skeleton width={80} height={14} borderRadius={4} />
       </View>
     );
   }
@@ -62,7 +65,7 @@ export function ProfileScreen() {
   if (!isAuthenticated) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={styles.emoji}>👤</Text>
+        <MaterialCommunityIcons name="account-outline" size={64} color={colors.textTertiary} />
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Sign in to track your progress and connect with friends
@@ -119,7 +122,7 @@ export function ProfileScreen() {
 
   // Authenticated but no profile — show setup
   if (!profile) {
-    return <ProfileSetup />;
+    return <ProfileSetup onComplete={() => refreshProfile()} />;
   }
 
   // Authenticated with profile — show full profile
@@ -241,10 +244,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 16,
     textAlign: 'center',
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   title: {
     fontSize: 24,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LoggingScreen } from '@/screens/LoggingScreen';
 import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
@@ -30,7 +31,7 @@ export default function PoopScreen() {
         accessibilityLabel="Log a poop"
         accessibilityRole="button"
       >
-        <Text style={styles.emoji}>💩</Text>
+        <MaterialCommunityIcons name="emoticon-poop" size={64} color={colors.poop} />
         <Text style={[styles.tapText, { color: colors.text }]}>Tap to log poop</Text>
       </TouchableOpacity>
     </View>
@@ -50,10 +51,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emoji: {
-    fontSize: 80,
-    marginBottom: 8,
   },
   tapText: {
     fontSize: 16,

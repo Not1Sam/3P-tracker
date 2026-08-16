@@ -10,19 +10,23 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors, useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { supabase } from '@/services/supabase-client';
+import { getSplashScreenEnabled, setSplashScreenEnabled } from '@/services/settings';
 import { logger } from '@/utils/logger';
 
-export default function SettingsScreen() {
+export default function SettingsRoute() {
   const colors = useThemeColors();
   const { mode, setMode } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
   const { profile, refreshProfile } = useProfile();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const [username, setUsername] = useState(profile?.username ?? '');
   const [newEmail, setNewEmail] = useState('');
@@ -30,8 +34,8 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Connected mode = sync enabled (default true), Local mode = no sync
   const [connectedMode, setConnectedMode] = useState(true);
+  const [splashEnabled, setSplashEnabled] = useState(getSplashScreenEnabled());
 
   const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -103,16 +107,32 @@ export default function SettingsScreen() {
     showMessage('success', connectedMode ? 'Local mode — data stays on device' : 'Connected mode — data syncs to cloud');
   }, [isAuthenticated, connectedMode, showMessage]);
 
+  const handleToggleSplash = useCallback(() => {
+    const newValue = !splashEnabled;
+    setSplashEnabled(newValue);
+    setSplashScreenEnabled(newValue);
+    logger.ui('Settings: splash screen toggled', { enabled: newValue });
+  }, [splashEnabled]);
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <Stack.Screen options={{ headerShown: false }} />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderLight }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
+        <View style={styles.backButton} />
+      </View>
+
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Status message */}
         {message && (
           <View style={[styles.messageBox, { backgroundColor: message.type === 'success' ? colors.success + '20' : colors.error + '20' }]}>
             <Text style={[styles.messageText, { color: message.type === 'success' ? colors.success : colors.error }]}>
@@ -138,9 +158,23 @@ export default function SettingsScreen() {
               thumbColor={mode === 'dark' ? colors.primary : colors.surface}
             />
           </View>
+          <View style={[styles.row, { borderBottomColor: colors.border }]}>
+            <View style={styles.rowContent}>
+              <Text style={[styles.rowLabel, { color: colors.text }]}>Splash Screen</Text>
+              <Text style={[styles.rowSubtext, { color: colors.textTertiary }]}>
+                {splashEnabled ? 'Show on app start' : 'Skip on app start'}
+              </Text>
+            </View>
+            <Switch
+              value={splashEnabled}
+              onValueChange={handleToggleSplash}
+              trackColor={{ false: colors.border, true: colors.primary + '60' }}
+              thumbColor={splashEnabled ? colors.primary : colors.surface}
+            />
+          </View>
         </View>
 
-        {/* Connected Mode (auth-gated) */}
+        {/* Connected Mode */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Mode</Text>
           {isAuthenticated ? (
@@ -172,7 +206,6 @@ export default function SettingsScreen() {
 
         {isAuthenticated && (
           <>
-            {/* Change Username */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Username</Text>
@@ -198,7 +231,6 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Change Email */}
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email</Text>
               <Text style={[styles.rowSubtext, { color: colors.textTertiary, marginBottom: 8 }]}>
                 Current: {user?.email}
@@ -226,7 +258,6 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Change Password */}
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>New Password</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
@@ -250,7 +281,6 @@ export default function SettingsScreen() {
           </>
         )}
 
-        {/* Sign Out */}
         {isAuthenticated && (
           <View style={styles.section}>
             <TouchableOpacity
@@ -266,7 +296,6 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* Debug */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Debug</Text>
           <TouchableOpacity
@@ -284,7 +313,6 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Version */}
         <View style={styles.footer}>
           <Text style={[styles.version, { color: colors.textTertiary }]}>3P Tracker v1.0.0</Text>
         </View>
@@ -297,8 +325,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    height: 48,
+    borderBottomWidth: 0.5,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 16,
   },
   messageBox: {
     padding: 12,

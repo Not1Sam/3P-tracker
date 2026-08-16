@@ -1,13 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LoggingScreen } from '@/screens/LoggingScreen';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
 
 export default function PissScreen() {
   const colors = useThemeColors();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [showLogging, setShowLogging] = useState(false);
+
+  const handleTapToLog = () => {
+    if (!isAuthenticated) {
+      logger.nav('PissScreen - auth required');
+      Alert.alert(
+        'Login Required',
+        'You need to log in to log entries.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Log In',
+            onPress: () => {
+              logger.nav('PissScreen - navigating to login');
+              router.push('/profile');
+            },
+          },
+        ],
+      );
+      return;
+    }
+    logger.navScreen('PissScreen - open logging');
+    setShowLogging(true);
+  };
 
   if (showLogging) {
     return (
@@ -24,10 +51,7 @@ export default function PissScreen() {
       <TouchableOpacity
         style={[styles.tapArea, { backgroundColor: colors.pissLight }]}
         activeOpacity={0.7}
-        onPress={() => {
-          logger.navScreen('PissScreen - open logging');
-          setShowLogging(true);
-        }}
+        onPress={handleTapToLog}
         accessibilityLabel="Log a piss"
         accessibilityRole="button"
       >

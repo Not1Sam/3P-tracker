@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { getCalendarMarkedDates } from '@/services/history-service';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
 
 type MarkedDateDot = {
@@ -24,6 +26,7 @@ type MarkedDates = Record<string, MarkedDateValue>;
 export function CalendarScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const { isAuthenticated } = useAuth();
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
   const [currentMonth, setCurrentMonth] = useState({
     year: new Date().getFullYear(),
@@ -65,12 +68,17 @@ export function CalendarScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!isAuthenticated) {
+        setMarkedDates({});
+        return;
+      }
       logger.ui('Calendar screen focused');
       loadCalendarData(currentMonth.year, currentMonth.month);
-    }, [currentMonth, loadCalendarData])
+    }, [currentMonth, loadCalendarData, isAuthenticated])
   );
 
   const handleDayPress = (day: { dateString: string }) => {
+    if (!isAuthenticated) return;
     logger.ui('Calendar day pressed', { date: day.dateString });
     router.push(`/entry/day/${day.dateString}`);
   };
@@ -79,6 +87,18 @@ export function CalendarScreen() {
     logger.ui('Calendar month changed', { year: month.year, month: month.month });
     setCurrentMonth({ year: month.year, month: month.month });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={[styles.container, styles.emptyContainer, { backgroundColor: colors.background }]}>
+        <MaterialCommunityIcons name="lock-outline" size={48} color={colors.textTertiary} />
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>Login required</Text>
+        <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+          Log in to see your calendar history
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -110,5 +130,19 @@ export function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  emptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

@@ -1,13 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LoggingScreen } from '@/screens/LoggingScreen';
 import { useThemeColors } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
 
 export default function PoopScreen() {
   const colors = useThemeColors();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [showLogging, setShowLogging] = useState(false);
+
+  const handleTapToLog = () => {
+    if (!isAuthenticated) {
+      logger.nav('PoopScreen - auth required');
+      Alert.alert(
+        'Login Required',
+        'You need to log in to log entries.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Log In',
+            onPress: () => {
+              logger.nav('PoopScreen - navigating to login');
+              router.push('/profile');
+            },
+          },
+        ],
+      );
+      return;
+    }
+    logger.navScreen('PoopScreen - open logging');
+    setShowLogging(true);
+  };
 
   if (showLogging) {
     return (
@@ -24,10 +51,7 @@ export default function PoopScreen() {
       <TouchableOpacity
         style={[styles.tapArea, { backgroundColor: colors.poopLight }]}
         activeOpacity={0.7}
-        onPress={() => {
-          logger.navScreen('PoopScreen - open logging');
-          setShowLogging(true);
-        }}
+        onPress={handleTapToLog}
         accessibilityLabel="Log a poop"
         accessibilityRole="button"
       >

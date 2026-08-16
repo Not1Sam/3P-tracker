@@ -39,7 +39,7 @@ function getSyncStorage() {
           'theme', 'syncDayOfMonth', 'userName', 'userEmail',
           'lastSyncTimestamp', 'lastAutoBackup',
           'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
-          'inviteCode',
+          'inviteCode', 'splashScreenEnabled',
         ];
         for (const key of keys) {
           try { localStorage.removeItem(key); } catch {}
@@ -84,7 +84,7 @@ function getSyncStorage() {
         'theme', 'syncDayOfMonth', 'userName', 'userEmail',
         'lastSyncTimestamp', 'lastAutoBackup',
         'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
-        'inviteCode',
+        'inviteCode', 'splashScreenEnabled',
       ];
       for (const key of keys) {
         try { SecureStore.deleteItemAsync(key); } catch {}
@@ -184,4 +184,17 @@ export function getUserGender(): UserGender | undefined {
 export function setUserGender(gender: UserGender): void {
   storage.set('userGender', gender);
   logger.uiAction('User gender changed', { gender });
+}
+
+// Splash screen setting
+export function getSplashScreenEnabled(): boolean {
+  // Default to true for existing users, but on first launch (no key set) also default to true
+  const stored = storage.getString('splashScreenEnabled');
+  if (stored === undefined) return true;
+  return stored === 'true';
+}
+
+export function setSplashScreenEnabled(enabled: boolean): void {
+  storage.set('splashScreenEnabled', enabled ? 'true' : 'false');
+  logger.uiAction('Splash screen toggled', { enabled });
 }

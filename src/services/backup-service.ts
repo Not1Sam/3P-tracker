@@ -120,8 +120,15 @@ export async function checkAutoBackup(): Promise<void> {
   const lastBackup = storage.getNumber('lastAutoBackup') ?? 0;
   const now = Date.now();
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  const daysSinceBackup = Math.floor((now - lastBackup) / (24 * 60 * 60 * 1000));
 
+  // First launch — no backup timestamp yet, skip and set it so it doesn't trigger immediately
+  if (lastBackup === 0) {
+    storage.set('lastAutoBackup', now);
+    logger.backup('First launch — skipping auto-backup, timestamp initialized');
+    return;
+  }
+
+  const daysSinceBackup = Math.floor((now - lastBackup) / (24 * 60 * 60 * 1000));
   logger.backup('Checking auto-backup', { daysSinceBackup, lastBackupTimestamp: lastBackup });
 
   if (now - lastBackup >= sevenDays) {

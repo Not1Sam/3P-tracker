@@ -15,6 +15,7 @@ import { checkForUpdate } from '@/services/update-checker';
 import { syncLeaderboards } from '@/services/leaderboard-service';
 import { runMonthlySync } from '@/services/sync-engine';
 import { checkAutoBackup } from '@/services/backup-service';
+import { getSplashScreenEnabled } from '@/services/settings';
 import { logger } from '@/utils/logger';
 
 export default function RootLayout() {
@@ -23,7 +24,7 @@ export default function RootLayout() {
     error: string | null;
     initialized: boolean;
   }>({
-    showSplash: true,
+    showSplash: getSplashScreenEnabled(),
     error: null,
     initialized: false,
   });
@@ -126,6 +127,10 @@ export default function RootLayout() {
               <PWAInstallHint />
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="calendar" options={{ headerShown: false }} />
+                <Stack.Screen name="activity" options={{ headerShown: false }} />
+                <Stack.Screen name="settings" options={{ headerShown: false }} />
+                <Stack.Screen name="profile" options={{ headerShown: false }} />
                 <Stack.Screen name="entry/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="entry/day/[date]" options={{ headerShown: false }} />
                 <Stack.Screen name="invite/[code]" options={{ headerShown: false }} />

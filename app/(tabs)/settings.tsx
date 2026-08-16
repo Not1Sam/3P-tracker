@@ -266,6 +266,24 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* Debug */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Debug</Text>
+          <TouchableOpacity
+            style={[styles.signOutBtn, { borderColor: colors.border }]}
+            onPress={async () => {
+              try {
+                await logger.shareLogs();
+              } catch (e: any) {
+                showMessage('error', e.message || 'Failed to export logs');
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.signOutBtnText, { color: colors.text }]}>Export Logs</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Version */}
         <View style={styles.footer}>
           <Text style={[styles.version, { color: colors.textTertiary }]}>3P Tracker v1.0.0</Text>

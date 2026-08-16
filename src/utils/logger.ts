@@ -203,4 +203,14 @@ export const logger = {
       logBuffer = [];
     } catch {}
   },
+  shareLogs: async (): Promise<void> => {
+    await flushLogs();
+    const Sharing = require('expo-sharing');
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(LOG_FILE, {
+        mimeType: 'text/plain',
+        dialogTitle: 'Export app logs',
+      });
+    }
+  },
 };

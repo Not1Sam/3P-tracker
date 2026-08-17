@@ -6,6 +6,7 @@ module.exports = {
   swDest: 'dist/sw.js',
   clientsClaim: true,
   skipWaiting: true,
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
   navigateFallback: '/index.html',
   navigateFallbackDenylist: [
     /^\/_/,

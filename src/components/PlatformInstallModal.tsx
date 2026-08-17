@@ -16,9 +16,8 @@ import { useThemeColors } from '@/contexts/ThemeContext';
 import { logger } from '@/utils/logger';
 
 const DISMISSAL_KEY = 'platform-install-modal-dismissed';
-const GITHUB_API = 'https://api.github.com/repos/Not1Sam/3P-tracker/releases/latest';
+const GITHUB_API = 'https://api.github.com/repos/Not1Sam/3P-tracker/releases';
 const GITHUB_RELEASES = 'https://github.com/Not1Sam/3P-tracker/releases';
-const APK_FALLBACK = 'https://github.com/Not1Sam/3P-tracker/releases/latest/download/3P-Tracker-beta_V1.1.apk';
 
 type PlatformType = 'ios' | 'android' | 'other';
 
@@ -59,18 +58,22 @@ interface LatestRelease {
 
 async function fetchLatestRelease(): Promise<LatestRelease | null> {
   try {
-    const res = await fetch(GITHUB_API);
+    const res = await fetch(GITHUB_API + '?per_page=5');
     if (!res.ok) return null;
-    const data = await res.json();
-    const apk = data.assets?.find(
-      (a: any) => a.name?.endsWith('.apk') && a.state === 'uploaded'
-    );
-    if (!apk) return null;
-    return {
-      tagName: data.tag_name,
-      apkUrl: apk.browser_download_url,
-      apkName: apk.name,
-    };
+    const releases: any[] = await res.json();
+    for (const r of releases) {
+      const apk = r.assets?.find(
+        (a: any) => a.name?.endsWith('.apk') && a.state === 'uploaded'
+      );
+      if (apk) {
+        return {
+          tagName: r.tag_name,
+          apkUrl: apk.browser_download_url,
+          apkName: apk.name,
+        };
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -123,7 +126,7 @@ export function PlatformInstallModal() {
 
   const handleDownloadAPK = async () => {
     setLoading(true);
-    const url = release?.apkUrl ?? APK_FALLBACK;
+    const url = release?.apkUrl ?? GITHUB_RELEASES;
     logger.uiAction('APK download initiated', { version: release?.tagName ?? 'latest', url });
     try {
       await Linking.openURL(url);

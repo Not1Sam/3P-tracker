@@ -14,7 +14,10 @@ export function AppHeader() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.surface + 'E6', borderBottomColor: colors.borderLight }]}>
+    <View style={[styles.container, { backgroundColor: colors.surface + 'E6', borderBottomColor: colors.borderLight }]}>
+      {/* Status bar spacer — pushes content below the status bar */}
+      <View style={{ height: insets.top }} />
+      {/* Header content */}
       <View style={styles.row}>
         {/* Left icons */}
         <View style={styles.side}>

@@ -17,3 +17,28 @@ export async function initializeApp() {
   logger.appReady('App initialization complete');
   await logger.flush();
 }
+
+/**
+ * Fire-and-forget background tasks that run AFTER the app is visible.
+ * These are non-critical: sync, update checks, backups, leaderboards.
+ * Each is wrapped in its own try/catch so one failure doesn't affect others.
+ */
+export function runBackgroundTasks() {
+  logger.appInit('Running background tasks');
+
+  import('./update-checker').then(m =>
+    m.checkForUpdate().catch(e => logger.syncError('Update check failed', { error: e }))
+  );
+
+  import('./sync-engine').then(m =>
+    m.runMonthlySync().catch(e => logger.syncError('Monthly sync failed', { error: e }))
+  );
+
+  import('./leaderboard-service').then(m =>
+    m.syncLeaderboards().catch(e => logger.syncError('Leaderboard sync failed', { error: e }))
+  );
+
+  import('./backup-service').then(m =>
+    m.checkAutoBackup().catch(e => logger.backupError('Auto backup check failed', { error: e }))
+  );
+}

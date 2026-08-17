@@ -120,8 +120,9 @@ export default function SettingsRoute() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Stack.Screen options={{ headerShown: false }} />
+      <View style={{ height: insets.top, backgroundColor: colors.background }} />
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>

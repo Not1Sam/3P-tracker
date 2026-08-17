@@ -2,29 +2,27 @@ import 'react-native-reanimated';
 import React, { useState, useEffect, useCallback } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { NetworkProvider } from '@/contexts/NetworkContext';
-import { SplashScreen } from '@/components/common/SplashScreen';
 import { InitErrorScreen } from '@/components/common/InitErrorScreen';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PWAInstallHint } from '@/components/PWAInstallHint';
-import { initializeApp } from '@/services/app-init';
-import { checkForUpdate } from '@/services/update-checker';
-import { syncLeaderboards } from '@/services/leaderboard-service';
-import { runMonthlySync } from '@/services/sync-engine';
-import { checkAutoBackup } from '@/services/backup-service';
-import { getSplashScreenEnabled } from '@/services/settings';
+import { initializeApp, runBackgroundTasks } from '@/services/app-init';
 import { logger } from '@/utils/logger';
+
+function ThemeStatusBar() {
+  const { mode } = useTheme();
+  return <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />;
+}
 
 export default function RootLayout() {
   const [state, setState] = useState<{
-    showSplash: boolean;
     error: string | null;
     initialized: boolean;
   }>({
-    showSplash: getSplashScreenEnabled(),
     error: null,
     initialized: false,
   });
@@ -34,7 +32,6 @@ export default function RootLayout() {
     try {
       await initializeApp();
       setState({
-        showSplash: true,
         error: null,
         initialized: true,
       });
@@ -42,11 +39,10 @@ export default function RootLayout() {
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Unknown initialization error';
       logger.appError('RootLayout: initApp failed', { error: message });
-      setState(prev => ({
-        ...prev,
+      setState({
         error: message,
         initialized: true,
-      }));
+      });
     }
   }, []);
 
@@ -55,29 +51,12 @@ export default function RootLayout() {
     initApp();
   }, [initApp]);
 
-  // Check for updates, sync leaderboards, and auto-backup on app open
+  // Fire background tasks after app is visible
   useEffect(() => {
     if (state.initialized) {
-      logger.appInit('RootLayout: Running post-init tasks');
-      checkForUpdate().catch((e) => {
-        logger.syncError('Update check failed', { error: e });
-      });
-      runMonthlySync().catch((e) => {
-        logger.syncError('Monthly sync failed', { error: e });
-      });
-      syncLeaderboards().catch((e) => {
-        logger.syncError('Leaderboard sync failed', { error: e });
-      });
-      checkAutoBackup().catch((e) => {
-        logger.backupError('Auto backup check failed', { error: e });
-      });
+      runBackgroundTasks();
     }
   }, [state.initialized]);
-
-  const handleSplashFinish = useCallback(() => {
-    logger.nav('Splash finished, showing main app');
-    setState(prev => ({ ...prev, showSplash: false }));
-  }, []);
 
   const handleRetry = useCallback(() => {
     logger.appInit('RootLayout: Retry button pressed');
@@ -92,34 +71,31 @@ export default function RootLayout() {
     initApp();
   }, [initApp]);
 
-  if (state.showSplash || !state.initialized) {
-    if (state.error) {
-      logger.appError('RootLayout: Showing error screen', { error: state.error });
-      return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <ThemeProvider>
-            <InitErrorScreen
-              error={state.error}
-              onRetry={handleRetry}
-              onReset={handleReset}
-            />
-          </ThemeProvider>
-        </GestureHandlerRootView>
-      );
-    }
+  if (state.error) {
+    logger.appError('RootLayout: Showing error screen', { error: state.error });
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ThemeProvider>
-          <SplashScreen onFinish={handleSplashFinish} />
+          <ThemeStatusBar />
+          <InitErrorScreen
+            error={state.error}
+            onRetry={handleRetry}
+            onReset={handleReset}
+          />
         </ThemeProvider>
       </GestureHandlerRootView>
     );
+  }
+
+  if (!state.initialized) {
+    return null;
   }
 
   logger.nav('RootLayout: Rendering main app');
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
+        <ThemeStatusBar />
         <AuthProvider>
           <ProfileProvider>
             <NetworkProvider>

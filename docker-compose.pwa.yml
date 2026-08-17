@@ -1,0 +1,13 @@
+services:
+  pwa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 3p-tracker-pwa
+    restart: unless-stopped
+    networks:
+      - not1sam-backend_default
+
+networks:
+  not1sam-backend_default:
+    external: true

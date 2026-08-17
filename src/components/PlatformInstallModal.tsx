@@ -18,6 +18,7 @@ import { logger } from '@/utils/logger';
 const DISMISSAL_KEY = 'platform-install-modal-dismissed';
 const GITHUB_API = 'https://api.github.com/repos/Not1Sam/3P-tracker/releases/latest';
 const GITHUB_RELEASES = 'https://github.com/Not1Sam/3P-tracker/releases';
+const APK_FALLBACK = 'https://github.com/Not1Sam/3P-tracker/releases/latest/download/3P-Tracker-beta_V1.1.apk';
 
 type PlatformType = 'ios' | 'android' | 'other';
 
@@ -96,7 +97,7 @@ export function PlatformInstallModal() {
       ]).start();
 
       if (p === 'android') {
-        fetchLatestRelease().then(setRelease);
+        fetchLatestRelease().then(setRelease).catch(() => {});
       }
     }
   }, [scale, opacity]);
@@ -111,11 +112,11 @@ export function PlatformInstallModal() {
   };
 
   const handleDownloadAPK = async () => {
-    if (!release) return;
     setLoading(true);
-    logger.uiAction('APK download initiated', { version: release.tagName });
+    const url = release?.apkUrl ?? APK_FALLBACK;
+    logger.uiAction('APK download initiated', { version: release?.tagName ?? 'latest', url });
     try {
-      await Linking.openURL(release.apkUrl);
+      await Linking.openURL(url);
     } catch {
       await Linking.openURL(GITHUB_RELEASES);
     }
@@ -247,9 +248,9 @@ function AndroidContent({
       ) : null}
 
       <TouchableOpacity
-        style={[styles.primaryBtn, { backgroundColor: colors.accent, opacity: (!release || loading) ? 0.6 : 1 }]}
+        style={[styles.primaryBtn, { backgroundColor: colors.accent, opacity: loading ? 0.6 : 1 }]}
         onPress={onDownload}
-        disabled={!release || loading}
+        disabled={loading}
         accessibilityRole="button"
       >
         {loading ? (
@@ -258,7 +259,7 @@ function AndroidContent({
           <>
             <MaterialCommunityIcons name="download" size={18} color={colors.textInverse} />
             <Text style={[styles.primaryBtnText, { color: colors.textInverse, marginLeft: 8 }]}>
-              {release ? `Download APK (${release.tagName})` : 'Loading...'}
+              Download APK
             </Text>
           </>
         )}

@@ -10,6 +10,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npx expo export --platform web
+RUN npx workbox-cli generateSW workbox-config.js
+RUN node scripts/patch-pwa.js
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html/

@@ -1,5 +1,5 @@
-import * as FileSystem from 'expo-file-system/legacy';
 import { format } from 'date-fns';
+import { Platform } from 'react-native';
 
 type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'ACTION';
 type LogCategory = 'APP' | 'NAV' | 'AUTH' | 'DB' | 'SYNC' | 'UI' | 'INPUT' | 'PERIOD' | 'SOCIAL' | 'LEADERBOARD' | 'BACKUP' | 'ANIMATION';
@@ -12,7 +12,17 @@ interface LogEntry {
   data?: any;
 }
 
-const LOG_FILE = `${FileSystem.documentDirectory}app-debug.log`;
+const IS_WEB = Platform.OS === 'web';
+
+// expo-file-system is not available on web — skip file logging
+let FileSystem: typeof import('expo-file-system/legacy') | null = null;
+if (!IS_WEB) {
+  try {
+    FileSystem = require('expo-file-system/legacy');
+  } catch {}
+}
+
+const LOG_FILE = FileSystem ? `${FileSystem.documentDirectory}app-debug.log` : '';
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
 
 let logBuffer: LogEntry[] = [];
@@ -25,6 +35,10 @@ function formatEntry(entry: LogEntry): string {
 
 async function flushLogs(): Promise<void> {
   if (logBuffer.length === 0) return;
+  if (IS_WEB || !FileSystem) {
+    logBuffer = [];
+    return;
+  }
 
   const logsToWrite = [...logBuffer];
   logBuffer = [];
@@ -56,6 +70,7 @@ async function flushLogs(): Promise<void> {
 }
 
 async function cleanupOldLogs(): Promise<void> {
+  if (IS_WEB || !FileSystem) return;
   try {
     const dir = FileSystem.documentDirectory;
     if (!dir) return;
@@ -73,7 +88,7 @@ async function cleanupOldLogs(): Promise<void> {
 }
 
 function startAutoFlush(): void {
-  if (flushTimer) return;
+  if (flushTimer || IS_WEB) return;
   flushTimer = setInterval(() => {
     flushLogs().catch(() => {});
   }, 5000); // Flush every 5 seconds
@@ -189,6 +204,7 @@ export const logger = {
   flush: flushLogs,
   getLogPath: () => LOG_FILE,
   readLogs: async (): Promise<string> => {
+    if (IS_WEB || !FileSystem) return '';
     try {
       return await FileSystem.readAsStringAsync(LOG_FILE, {
         encoding: FileSystem.EncodingType.UTF8,
@@ -198,12 +214,17 @@ export const logger = {
     }
   },
   clearLogs: async (): Promise<void> => {
+    if (IS_WEB || !FileSystem) {
+      logBuffer = [];
+      return;
+    }
     try {
       await FileSystem.deleteAsync(LOG_FILE);
       logBuffer = [];
     } catch {}
   },
   shareLogs: async (): Promise<void> => {
+    if (IS_WEB || !FileSystem) return;
     await flushLogs();
     const Sharing = require('expo-sharing');
     if (await Sharing.isAvailableAsync()) {

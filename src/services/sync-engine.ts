@@ -1,4 +1,3 @@
-import { InteractionManager } from 'react-native';
 import { getDatabase } from '@/db';
 import { poopLogs, pissLogs } from '@/db/schema';
 import { getSyncableTables } from '@/services/privacy-tiers';
@@ -37,7 +36,8 @@ export async function runMonthlySync(): Promise<{ success: boolean; error?: stri
   }
 
   return new Promise((resolve) => {
-    InteractionManager.runAfterInteractions(async () => {
+    // Defer sync to avoid blocking UI on app open
+    setTimeout(async () => {
       try {
         const db = await getDatabase();
         const lastSyncTimestamp = getLastSyncTimestamp();
@@ -82,7 +82,7 @@ export async function runMonthlySync(): Promise<{ success: boolean; error?: stri
         await retryWithBackoff(async () => { await runMonthlySync(); });
         resolve({ success: false, error: message });
       }
-    });
+    }, 100);
   });
 }
 

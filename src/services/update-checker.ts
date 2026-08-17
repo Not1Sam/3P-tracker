@@ -2,7 +2,7 @@ import * as Application from 'expo-application';
 import * as WebBrowser from 'expo-web-browser';
 import { logger } from '@/utils/logger';
 
-const VERSION_ENDPOINT = 'https://your-homelab.com/version.json';
+const VERSION_ENDPOINT = process.env.EXPO_PUBLIC_VERSION_URL ?? '';
 
 export interface VersionInfo {
   version: string;
@@ -17,6 +17,12 @@ export interface VersionInfo {
  * Silently returns null on any network/parse error.
  */
 export async function checkForUpdate(): Promise<VersionInfo | null> {
+  // Skip if endpoint is not configured
+  if (!VERSION_ENDPOINT || VERSION_ENDPOINT.includes('your-homelab.com')) {
+    logger.ui('Update check skipped — no update server configured');
+    return null;
+  }
+
   logger.ui('Checking for app updates');
   try {
     const response = await fetch(VERSION_ENDPOINT);

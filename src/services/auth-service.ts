@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase-client';
+import { supabase, isSupabaseConfigured } from '@/services/supabase-client';
 import type { User } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 
@@ -11,6 +11,11 @@ export interface AuthResult {
  * Sign up with email and password.
  */
 export async function signUp(email: string, password: string): Promise<AuthResult> {
+  if (!isSupabaseConfigured()) {
+    logger.authError('Supabase not configured — sign up unavailable');
+    return { user: null, error: 'Authentication not configured. Please set up Supabase.' };
+  }
+
   logger.auth('Attempting sign up', { email });
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -36,6 +41,11 @@ export async function signUp(email: string, password: string): Promise<AuthResul
  * Sign in with email and password.
  */
 export async function signIn(email: string, password: string): Promise<AuthResult> {
+  if (!isSupabaseConfigured()) {
+    logger.authError('Supabase not configured — sign in unavailable');
+    return { user: null, error: 'Authentication not configured. Please set up Supabase.' };
+  }
+
   logger.auth('Attempting sign in', { email });
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -61,6 +71,10 @@ export async function signIn(email: string, password: string): Promise<AuthResul
  * Sign out the current user.
  */
 export async function signOut(): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) {
+    return { error: null };
+  }
+
   logger.authLogout();
   try {
     const { error } = await supabase.auth.signOut();
@@ -81,6 +95,10 @@ export async function signOut(): Promise<{ error: string | null }> {
  * Uses getUser() to validate against the server, not just the local cache.
  */
 export async function getCurrentUser(): Promise<User | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
@@ -101,6 +119,10 @@ export async function getCurrentUser(): Promise<User | null> {
  * Get the current session.
  */
 export async function getSession() {
+  if (!isSupabaseConfigured()) {
+    return { session: null, error: 'Supabase not configured' };
+  }
+
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error) {
@@ -119,6 +141,10 @@ export async function getSession() {
  * Send password reset email.
  */
 export async function resetPassword(email: string): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) {
+    return { error: 'Authentication not configured. Please set up Supabase.' };
+  }
+
   logger.auth('Password reset requested', { email });
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email);
@@ -139,6 +165,11 @@ export async function resetPassword(email: string): Promise<{ error: string | nu
  * Listen for auth state changes.
  */
 export function onAuthStateChange(callback: (user: User | null) => void) {
+  if (!isSupabaseConfigured()) {
+    logger.auth('Supabase not configured — auth listener skipped');
+    return () => {};
+  }
+
   logger.auth('Setting up auth state listener');
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
     (_event, session) => {

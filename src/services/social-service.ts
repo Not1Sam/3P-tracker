@@ -432,9 +432,9 @@ export async function getActiveInviteCode(
     logger.db('Active invite code fetched', { hasCode });
     return { code: data?.code ?? null, error: null };
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to get active invite code';
-    logger.dbError('Failed to fetch active invite code', { userId, error: message });
-    return { code: null, error: message };
+    // Invite code fetch is non-critical — user may not have a code yet
+    logger.db('Invite code not available', { userId });
+    return { code: null, error: null };
   }
 }
 

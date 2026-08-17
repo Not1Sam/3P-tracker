@@ -1,10 +1,19 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 import { getAllPoopLogs, insertPoopLog } from '@/db/repositories/poop-repository';
 import { getAllPissLogs, insertPissLog } from '@/db/repositories/piss-repository';
 import { getAllCustomTypes, insertCustomType } from '@/db/repositories/custom-type-repository';
 import { storage } from '@/services/settings';
-import * as Sharing from 'expo-sharing';
 import { logger } from '@/utils/logger';
+
+const IS_WEB = Platform.OS === 'web';
+
+// expo-file-system is not available on web — conditionally import
+let FileSystem: typeof import('expo-file-system/legacy') | null = null;
+if (!IS_WEB) {
+  try {
+    FileSystem = require('expo-file-system/legacy');
+  } catch {}
+}
 
 interface BackupData {
   version: 1;
@@ -22,6 +31,11 @@ function cleanRow(row: any): any {
 }
 
 export async function exportBackup(): Promise<{ uri: string | null; error: string | null }> {
+  if (IS_WEB || !FileSystem) {
+    logger.backupError('Backup export not supported on web');
+    return { uri: null, error: 'Backup export not available on web platform' };
+  }
+
   logger.backupAction('Export backup started');
   try {
     // Export non-period data only (D-09: period never leaves device)
@@ -55,6 +69,7 @@ export async function exportBackup(): Promise<{ uri: string | null; error: strin
     await FileSystem.writeAsStringAsync(uri, json);
     logger.backup('Backup file written', { filename, poopCount: poop.length, pissCount: piss.length, customCount: customs.length });
 
+    const Sharing = require('expo-sharing');
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, {
         mimeType: 'application/json',
@@ -72,6 +87,11 @@ export async function exportBackup(): Promise<{ uri: string | null; error: strin
 }
 
 export async function importBackup(uri: string): Promise<{ imported: boolean; error: string | null }> {
+  if (IS_WEB || !FileSystem) {
+    logger.backupError('Backup import not supported on web');
+    return { imported: false, error: 'Backup import not available on web platform' };
+  }
+
   logger.backupAction('Import backup started', { uri });
   try {
     const json = await FileSystem.readAsStringAsync(uri);
@@ -117,6 +137,11 @@ export async function importBackup(uri: string): Promise<{ imported: boolean; er
 }
 
 export async function checkAutoBackup(): Promise<void> {
+  if (IS_WEB || !FileSystem) {
+    logger.backup('Auto-backup skipped on web');
+    return;
+  }
+
   const lastBackup = storage.getNumber('lastAutoBackup') ?? 0;
   const now = Date.now();
   const sevenDays = 7 * 24 * 60 * 60 * 1000;

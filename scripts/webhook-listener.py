@@ -46,7 +46,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
         print(f"[{self.log_date_time_string()}] Webhook verified. Deploying...")
         try:
-            subprocess.run(["git", "pull", "origin", "master"], cwd=REPO_DIR, check=True)
+            subprocess.run(["git", "fetch", "origin"], cwd=REPO_DIR, check=True)
+            subprocess.run(["git", "reset", "--hard", "origin/master"], cwd=REPO_DIR, check=True)
             subprocess.run(
                 ["sudo", "docker", "compose", "-f", "docker-compose.pwa.yml", "up", "-d", "--build"],
                 cwd=REPO_DIR, check=True,

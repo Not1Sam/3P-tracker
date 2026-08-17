@@ -25,8 +25,18 @@ type PlatformType = 'ios' | 'android' | 'other';
 function detectPlatform(): PlatformType {
   if (Platform.OS !== 'web') return 'other';
   const ua = navigator.userAgent || '';
-  if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+
+  // Android
   if (/android/i.test(ua)) return 'android';
+
+  // iOS: check multiple signals since iPadOS 13+ reports as Mac
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+    ('ontouchstart' in window && /Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+
+  if (isIOS) return 'ios';
+
   return 'other';
 }
 

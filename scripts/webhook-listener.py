@@ -9,7 +9,7 @@ import subprocess
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-PORT = 9000
+PORT = 9001
 REPO_DIR = "/home/ubuntu/3p-tracker-pwa"
 SECRET_FILE = os.path.join(REPO_DIR, ".webhook-secret")
 

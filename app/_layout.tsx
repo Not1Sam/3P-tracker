@@ -9,7 +9,7 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 import { NetworkProvider } from '@/contexts/NetworkContext';
 import { InitErrorScreen } from '@/components/common/InitErrorScreen';
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { PWAInstallHint } from '@/components/PWAInstallHint';
+import { PlatformInstallModal } from '@/components/PlatformInstallModal';
 import { initializeApp, runBackgroundTasks } from '@/services/app-init';
 import { logger } from '@/utils/logger';
 
@@ -100,7 +100,7 @@ export default function RootLayout() {
           <ProfileProvider>
             <NetworkProvider>
               <OfflineBanner />
-              <PWAInstallHint />
+              <PlatformInstallModal />
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="calendar" options={{ headerShown: false }} />

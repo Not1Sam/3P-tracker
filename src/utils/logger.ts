@@ -158,6 +158,9 @@ export const logger = {
   dbRead: (table: string, data?: any) => log('DEBUG', 'DB', `Read: ${table}`, data),
   dbError: (msg: string, data?: any) => log('ERROR', 'DB', msg, data),
 
+  // API
+  apiError: (method: string, path: string, msg: string) => log('ERROR', 'API', `${method} ${path}: ${msg}`),
+
   // Sync
   sync: (msg: string, data?: any) => log('INFO', 'SYNC', msg, data),
   syncStart: (type: string) => log('ACTION', 'SYNC', `Sync start: ${type}`),

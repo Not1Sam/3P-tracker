@@ -16,8 +16,8 @@
 
 import { startOfMonth, endOfMonth, startOfDay, subDays } from 'date-fns';
 import NetInfo from '@react-native-community/netinfo';
-import { getPoopLogsCount, getPoopLogsSince } from '@/db/repositories/poop-repository';
-import { getPissLogsCount, getPissLogsSince } from '@/db/repositories/piss-repository';
+import { getPoopLogsCount, getPoopLogsSince } from '@/services/api/repositories';
+import { getPissLogsCount, getPissLogsSince } from '@/services/api/repositories';
 import { supabase } from '@/services/supabase-client';
 import { getCurrentUser } from '@/services/auth-service';
 import { storage } from '@/services/settings';

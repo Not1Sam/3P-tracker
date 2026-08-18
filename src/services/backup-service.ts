@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
-import { getAllPoopLogs, insertPoopLog } from '@/db/repositories/poop-repository';
-import { getAllPissLogs, insertPissLog } from '@/db/repositories/piss-repository';
-import { getAllCustomTypes, insertCustomType } from '@/db/repositories/custom-type-repository';
+import { getAllPoopLogs, insertPoopLog } from '@/services/api/repositories';
+import { getAllPissLogs, insertPissLog } from '@/services/api/repositories';
+import { getAllCustomTypes, insertCustomType } from '@/services/api/repositories';
 import { storage } from '@/services/settings';
 import { logger } from '@/utils/logger';
 

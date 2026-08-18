@@ -1,20 +1,17 @@
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 import {
   getPoopLogsByDateRange,
-  getPoopLogsByDate,
   getPoopLogById,
   updatePoopLog,
   deletePoopLog,
   createPoopLog,
-} from '@/db/repositories/poop-repository';
-import {
   getPissLogsByDateRange,
-  getPissLogsByDate,
   getPissLogById,
   updatePissLog,
   deletePissLog,
   createPissLog,
-} from '@/db/repositories/piss-repository';
+} from '@/services/api/repositories';
 import { toLocalDateString } from '@/utils/date-helpers';
 import type {
   PoopLogEntry,

@@ -1,4 +1,52 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: 3p-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tracker3p
+      POSTGRES_USER: tracker3p
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tracker3p_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracker3p"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: 3p-tracker-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: 3p-tracker-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://tracker3p:${POSTGRES_PASSWORD:-tracker3p_secret}@3p-tracker-postgres:5432/tracker3p
+      REDIS_URL: redis://3p-tracker-redis:6379
+      EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - 3p-tracker
+
   pwa:
     build:
       context: .
@@ -9,9 +57,20 @@ services:
         EXPO_PUBLIC_VERSION_URL: ${EXPO_PUBLIC_VERSION_URL:-}
     container_name: 3p-tracker-pwa
     restart: unless-stopped
+    depends_on:
+      - api
     networks:
+      - 3p-tracker
       - not1sam-backend_default
 
 networks:
+  3p-tracker:
+    driver: bridge
   not1sam-backend_default:
     external: true
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local

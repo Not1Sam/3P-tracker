@@ -1,6 +1,5 @@
 import * as Location from 'expo-location';
-import { createPoopLog as repoCreatePoopLog, getPoopLogs, deletePoopLog } from '@/db/repositories/poop-repository';
-import { createPissLog as repoCreatePissLog, getPissLogs, deletePissLog } from '@/db/repositories/piss-repository';
+import { createPoopLog as repoCreatePoopLog, getPoopLogs, deletePoopLog, createPissLog as repoCreatePissLog, getPissLogs, deletePissLog } from '@/services/api/repositories';
 import { logger } from '@/utils/logger';
 import { canLogEntry, incrementDailyCount } from '@/utils/rate-limiter';
 import type {

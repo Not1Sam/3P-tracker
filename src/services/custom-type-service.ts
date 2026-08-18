@@ -1,6 +1,7 @@
 /**
  * Custom type service layer.
  * Re-exports repository functions for UI consumption.
+ * On web, these go through the API. On mobile, they use local SQLite.
  */
 
 export {
@@ -10,4 +11,4 @@ export {
   createCustomColor,
   getCustomColors,
   deleteCustomColor,
-} from '@/db/repositories/custom-type-repository';
+} from '@/services/api/repositories';

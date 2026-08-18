@@ -5,6 +5,7 @@ import { createHash } from 'crypto';
 import { cacheGet, cacheSet } from '../cache/index.js';
 
 const router = Router();
+const s = (v: unknown): string => String(v ?? '');
 
 const OTA_DIR = process.env.OTA_BUNDLE_DIR ?? '/data/ota';
 const HOST = process.env.OTA_HOST ?? 'https://pwa-3ptracker.bungus.fyi';
@@ -157,17 +158,17 @@ router.get('/manifest', async (req, res) => {
 
 // Serve static OTA bundle files
 router.get('/:platform/*', async (req, res) => {
-  const platform = String(req.params[0]);
-  const filePath = req.params[0]; // everything after /:platform/
+  const platform = s(req.params.platform);
+  const restPath = (req.params as any)[0] as string;
 
   if (platform !== 'android' && platform !== 'ios') {
     return res.status(404).json({ error: 'Not found' });
   }
 
-  const fullPath = join(OTA_DIR, platform, filePath);
+  const fullPath = join(OTA_DIR, platform, restPath);
   try {
     const content = await readFile(fullPath);
-    const ext = filePath.split('.').pop() ?? '';
+    const ext = restPath.split('.').pop() ?? '';
     res.setHeader('Content-Type', contentTypeFor(ext));
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(content);

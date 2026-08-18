@@ -1,12 +1,13 @@
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { startOfDay, endOfDay } from 'date-fns';
 import {
   getPoopLogsByDateRange,
+  getPoopLogsByDate,
   getPoopLogById,
   updatePoopLog,
   deletePoopLog,
   createPoopLog,
   getPissLogsByDateRange,
+  getPissLogsByDate,
   getPissLogById,
   updatePissLog,
   deletePissLog,

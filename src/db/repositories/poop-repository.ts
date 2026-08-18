@@ -1,9 +1,12 @@
-import { eq, desc, and, gte, lte, count } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, count, type InferSelectModel } from 'drizzle-orm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { poopLogs } from '@/db/schema';
 import { logger } from '@/utils/logger';
+
+type PoopLogRow = InferSelectModel<typeof poopLogs>;
+
 import type {
   PoopLogInput,
   PoopLogEntry,
@@ -50,7 +53,7 @@ export async function getPoopLogs(limit = 50): Promise<PoopLogEntry[]> {
     .orderBy(desc(poopLogs.timestamp))
     .limit(limit);
 
-  return rows.map((row) => ({
+  return rows.map((row: PoopLogRow) => ({
     id: row.id,
     timestamp: row.timestamp,
     typeId: row.typeId,
@@ -119,7 +122,7 @@ export async function getPoopLogsByDateRange(
     .where(and(gte(poopLogs.timestamp, start), lte(poopLogs.timestamp, end)))
     .orderBy(poopLogs.timestamp);
 
-  return rows.map((row) => ({
+  return rows.map((row: PoopLogRow) => ({
     id: row.id,
     timestamp: row.timestamp,
     typeId: row.typeId,
@@ -184,7 +187,7 @@ export async function getPoopLogsSince(cutoff: Date): Promise<Date[]> {
     .from(poopLogs)
     .where(gte(poopLogs.timestamp, cutoff))
     .orderBy(poopLogs.timestamp);
-  return rows.map(r => r.timestamp);
+  return rows.map((r: PoopLogRow) => r.timestamp);
 }
 
 /**

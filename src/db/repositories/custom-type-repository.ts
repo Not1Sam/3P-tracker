@@ -1,8 +1,12 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, type InferSelectModel } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { customTypes, customColors } from '@/db/schema';
 import { logger } from '@/utils/logger';
+
+type CustomTypeRow = InferSelectModel<typeof customTypes>;
+type CustomColorRow = InferSelectModel<typeof customColors>;
+
 import type { CustomType, CustomColor } from '@/types/logging';
 
 /**
@@ -34,7 +38,7 @@ export async function getCustomTypes(): Promise<CustomType[]> {
     .from(customTypes)
     .orderBy(desc(customTypes.createdAt));
 
-  return rows.map((row) => ({
+  return rows.map((row: CustomTypeRow) => ({
     id: row.id,
     name: row.name,
     createdAt: row.createdAt,
@@ -101,7 +105,7 @@ export async function getCustomColors(): Promise<CustomColor[]> {
     .from(customColors)
     .orderBy(desc(customColors.createdAt));
 
-  return rows.map((row) => ({
+  return rows.map((row: CustomColorRow) => ({
     id: row.id,
     name: row.name,
     hexValue: row.hexValue,

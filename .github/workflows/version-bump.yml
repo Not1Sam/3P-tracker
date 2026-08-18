@@ -1,0 +1,104 @@
+name: Version Bump
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          # Get commits since last version bump commit
+          LAST_BUMP=$(git log --all --oneline --grep="\[skip-version\]" -1 --format="%H" 2>/dev/null || echo "")
+          if [ -z "$LAST_BUMP" ]; then
+            COMMITS=$(git log --oneline HEAD)
+          else
+            COMMITS=$(git log --oneline "${LAST_BUMP}..HEAD" 2>/dev/null || git log --oneline HEAD)
+          fi
+
+          echo "Commits to scan:"
+          echo "$COMMITS"
+
+          # Default: no bump
+          BUMP="none"
+
+          # Check for breaking changes first
+          if echo "$COMMITS" | grep -qiE '(BREAKING CHANGE|!:)'; then
+            BUMP="major"
+          # Then feat
+          elif echo "$COMMITS" | grep -qiE '^[a-f0-9]+ feat[\(:]|^[a-f0-9]+ feat!:'; then
+            BUMP="minor"
+          # Then fix
+          elif echo "$COMMITS" | grep -qiE '^[a-f0-9]+ fix[\(:]|^[a-f0-9]+ fix!:'; then
+            BUMP="patch"
+          fi
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "Determined bump: $BUMP"
+
+      - name: Read and bump version
+        if: steps.bump.outputs.bump != 'none'
+        id: version
+        run: |
+          VERSION=$(cat VERSION)
+          echo "Current version: $VERSION"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          BUMP="${{ steps.bump.outputs.bump }}"
+
+          case "$BUMP" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              # Roll over: if minor hits 10, carry to major
+              if [ "$MINOR" -ge 10 ]; then
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+              fi
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              # Roll over: if patch hits 10, carry to minor
+              if [ "$PATCH" -ge 10 ]; then
+                PATCH=0
+                MINOR=$((MINOR + 1))
+              fi
+              # Roll over: if minor also hits 10, carry to major
+              if [ "$MINOR" -ge 10 ]; then
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+              fi
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW_VERSION"
+          echo "$NEW_VERSION" > VERSION
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        if: steps.bump.outputs.bump != 'none'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }} [skip-version] [skip ci]"
+          git push

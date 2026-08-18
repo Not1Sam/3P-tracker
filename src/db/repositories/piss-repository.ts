@@ -1,9 +1,12 @@
-import { eq, desc, and, gte, lte, count } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, count, type InferSelectModel } from 'drizzle-orm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { randomUUID } from 'expo-crypto';
 import { getDatabase } from '@/db';
 import { pissLogs } from '@/db/schema';
 import { logger } from '@/utils/logger';
+
+type PissLogRow = InferSelectModel<typeof pissLogs>;
+
 import type {
   PissLogInput,
   PissLogEntry,
@@ -52,7 +55,7 @@ export async function getPissLogs(limit = 50): Promise<PissLogEntry[]> {
     .orderBy(desc(pissLogs.timestamp))
     .limit(limit);
 
-  return rows.map((row) => ({
+  return rows.map((row: PissLogRow) => ({
     id: row.id,
     timestamp: row.timestamp,
     colorId: row.colorId,
@@ -123,7 +126,7 @@ export async function getPissLogsByDateRange(
     .where(and(gte(pissLogs.timestamp, start), lte(pissLogs.timestamp, end)))
     .orderBy(pissLogs.timestamp);
 
-  return rows.map((row) => ({
+  return rows.map((row: PissLogRow) => ({
     id: row.id,
     timestamp: row.timestamp,
     colorId: row.colorId,
@@ -189,7 +192,7 @@ export async function getPissLogsSince(cutoff: Date): Promise<Date[]> {
     .from(pissLogs)
     .where(gte(pissLogs.timestamp, cutoff))
     .orderBy(pissLogs.timestamp);
-  return rows.map(r => r.timestamp);
+  return rows.map((r: PissLogRow) => r.timestamp);
 }
 
 /**

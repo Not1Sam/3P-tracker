@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { Platform } from 'react-native';
 
 type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'ACTION';
-type LogCategory = 'APP' | 'NAV' | 'AUTH' | 'DB' | 'SYNC' | 'UI' | 'INPUT' | 'PERIOD' | 'SOCIAL' | 'LEADERBOARD' | 'BACKUP' | 'ANIMATION';
+type LogCategory = 'APP' | 'NAV' | 'AUTH' | 'DB' | 'SYNC' | 'UI' | 'INPUT' | 'PERIOD' | 'SOCIAL' | 'LEADERBOARD' | 'BACKUP' | 'ANIMATION' | 'API';
 
 interface LogEntry {
   timestamp: string;

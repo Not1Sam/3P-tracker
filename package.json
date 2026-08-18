@@ -63,7 +63,8 @@
     "test": "jest --config jest.config.js && jest --config jest.config.components.js",
     "test:unit": "jest --config jest.config.js",
     "test:components": "jest --config jest.config.components.js",
-    "build:web": "expo export -p web && npx workbox-cli generateSW workbox-config.js && node scripts/patch-pwa.js"
+    "build:web": "expo export -p web && npx workbox-cli generateSW workbox-config.js && node scripts/patch-pwa.js",
+    "lint": "expo lint"
   },
   "private": true
 }

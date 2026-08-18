@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { readdir, readFile, stat } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { createHash } from 'crypto';
 import { cacheGet, cacheSet } from '../cache/index.js';
 
@@ -165,7 +165,13 @@ router.get('/:platform/*', async (req, res) => {
     return res.status(404).json({ error: 'Not found' });
   }
 
-  const fullPath = join(OTA_DIR, platform, restPath);
+  const fullPath = resolve(OTA_DIR, platform, restPath);
+  const resolvedOtaDir = resolve(OTA_DIR)
+
+  if(!fullPath.startsWith(resolvedOtaDir+'/') && fullPath !== resolvedOtaDir){
+    return res.status(403).json({error: 'access denied'})
+  }
+
   try {
     const content = await readFile(fullPath);
     const ext = restPath.split('.').pop() ?? '';

@@ -29,6 +29,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+      
+      - name: Setup native CMake for ARM64
+        run: |
+              mkdir -p $ANDROID_HOME/cmake/3.22.1/bin
+              ln -sf /usr/bin/cmake $ANDROID_HOME/cmake/3.22.1/bin/cmake
+              ln -sf /usr/bin/ninja $ANDROID_HOME/cmake/3.22.1/bin/ninja
 
       - name: Build APK
         run: |

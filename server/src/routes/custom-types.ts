@@ -6,6 +6,7 @@ import { cacheGet, cacheSet, cacheInvalidate } from '../cache/index.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
+const s = (v: unknown): string => String(v ?? '');
 
 // ── Custom Types ──
 
@@ -15,12 +16,7 @@ router.get('/types', async (req: AuthenticatedRequest, res) => {
   const cached = await cacheGet(cacheKey);
   if (cached) return res.json(cached);
 
-  const rows = await db
-    .select()
-    .from(customTypes)
-    .where(eq(customTypes.userId, userId))
-    .orderBy(desc(customTypes.createdAt));
-
+  const rows = await db.select().from(customTypes).where(eq(customTypes.userId, userId)).orderBy(desc(customTypes.createdAt));
   await cacheSet(cacheKey, rows, 600);
   res.json(rows);
 });
@@ -30,23 +26,15 @@ router.post('/types', async (req: AuthenticatedRequest, res) => {
   const { id, name } = req.body;
   if (!id || !name) return res.status(400).json({ error: 'id and name required' });
 
-  await db.insert(customTypes).values({
-    id,
-    userId,
-    name,
-    createdAt: new Date(),
-  });
-
+  await db.insert(customTypes).values({ id: s(id), userId, name: s(name), createdAt: new Date() });
   await cacheInvalidate(`customTypes:${userId}`);
   res.status(201).json({ ok: true });
 });
 
 router.delete('/types/:id', async (req: AuthenticatedRequest, res) => {
   const userId = req.userId!;
-  await db
-    .delete(customTypes)
-    .where(and(eq(customTypes.id, req.params.id), eq(customTypes.userId, userId)));
-
+  const id = s(req.params.id);
+  await db.delete(customTypes).where(and(eq(customTypes.id, id), eq(customTypes.userId, userId)));
   await cacheInvalidate(`customTypes:${userId}`);
   res.json({ ok: true });
 });
@@ -59,12 +47,7 @@ router.get('/colors', async (req: AuthenticatedRequest, res) => {
   const cached = await cacheGet(cacheKey);
   if (cached) return res.json(cached);
 
-  const rows = await db
-    .select()
-    .from(customColors)
-    .where(eq(customColors.userId, userId))
-    .orderBy(desc(customColors.createdAt));
-
+  const rows = await db.select().from(customColors).where(eq(customColors.userId, userId)).orderBy(desc(customColors.createdAt));
   await cacheSet(cacheKey, rows, 600);
   res.json(rows);
 });
@@ -74,24 +57,15 @@ router.post('/colors', async (req: AuthenticatedRequest, res) => {
   const { id, name, hexValue } = req.body;
   if (!id || !name || !hexValue) return res.status(400).json({ error: 'id, name, and hexValue required' });
 
-  await db.insert(customColors).values({
-    id,
-    userId,
-    name,
-    hexValue,
-    createdAt: new Date(),
-  });
-
+  await db.insert(customColors).values({ id: s(id), userId, name: s(name), hexValue: s(hexValue), createdAt: new Date() });
   await cacheInvalidate(`customColors:${userId}`);
   res.status(201).json({ ok: true });
 });
 
 router.delete('/colors/:id', async (req: AuthenticatedRequest, res) => {
   const userId = req.userId!;
-  await db
-    .delete(customColors)
-    .where(and(eq(customColors.id, req.params.id), eq(customColors.userId, userId)));
-
+  const id = s(req.params.id);
+  await db.delete(customColors).where(and(eq(customColors.id, id), eq(customColors.userId, userId)));
   await cacheInvalidate(`customColors:${userId}`);
   res.json({ ok: true });
 });

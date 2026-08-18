@@ -43,6 +43,9 @@ services:
       REDIS_URL: redis://3p-tracker-redis:6379
       EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+      OTA_HOST: ${OTA_HOST:-https://pwa-3ptracker.bungus.fyi}
+    volumes:
+      - otadata:/data/ota
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,4 +80,6 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  otadata:
     driver: local

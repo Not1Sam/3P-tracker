@@ -7,6 +7,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "updates": {
+      "url": "https://pwa-3ptracker.bungus.fyi/ota/manifest",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 30000
+    },
     "ios": {
       "supportsTablet": true
     },

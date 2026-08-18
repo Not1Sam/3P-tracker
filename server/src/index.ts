@@ -9,6 +9,7 @@ import pissRoutes from './routes/piss.js';
 import customTypeRoutes from './routes/custom-types.js';
 import settingsRoutes from './routes/settings.js';
 import syncRoutes from './routes/sync.js';
+import otaRoutes from './routes/ota.js';
 
 const PORT = parseInt(process.env.API_PORT ?? '3001');
 const app = express();
@@ -27,6 +28,9 @@ app.use('/api/piss', authMiddleware, pissRoutes);
 app.use('/api/custom', authMiddleware, customTypeRoutes);
 app.use('/api/settings', authMiddleware, settingsRoutes);
 app.use('/api/sync', authMiddleware, syncRoutes);
+
+// OTA update routes (no auth — app needs to check updates before login)
+app.use('/ota', otaRoutes);
 
 async function start() {
   console.log('[API] Starting 3P Tracker API server...');

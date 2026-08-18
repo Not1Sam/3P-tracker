@@ -24,11 +24,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "not1sam.tracker3p",
-      "statusBar": {
-        "style": "auto",
-        "translucent": false
-      }
+      "package": "not1sam.tracker3p"
     },
     "web": {
       "favicon": "./assets/favicon.png",

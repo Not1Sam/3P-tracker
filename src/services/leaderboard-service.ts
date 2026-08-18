@@ -176,13 +176,21 @@ async function fetchFriendsLeaderboardFromSupabase(type: LogType): Promise<Leade
   const now = new Date();
   const countCol = type === 'poop' ? 'poop_count' : 'piss_count';
 
-  // Fetch monthly summaries for friends
+  // Fetch monthly summaries for friends (no FK join — Relationships not defined in Supabase)
   const { data: summaries } = await supabase
     .from('monthly_summaries')
-    .select(`user_id, ${countCol}, profiles!monthly_summaries_user_id_fkey(username)`)
+    .select(`user_id, ${countCol}`)
     .in('user_id', friendIds)
     .eq('month', now.getMonth() + 1)
     .eq('year', now.getFullYear());
+
+  // Fetch usernames from profiles
+  const allUserIds = [...friendIds, user.id];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username')
+    .in('id', allUserIds);
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.username]));
 
   // Add current user's score
   const personalScore = await getPersonalScore(type);
@@ -191,7 +199,7 @@ async function fetchFriendsLeaderboardFromSupabase(type: LogType): Promise<Leade
   const entries: LeaderboardEntry[] = [
     ...(summaries ?? []).map((s: any) => ({
       userId: s.user_id,
-      username: s.profiles?.username ?? 'unknown',
+      username: profileMap.get(s.user_id) ?? 'unknown',
       score: countCol === 'poop_count' ? s.poop_count : s.piss_count,
       streak: 0, // Streak only computed locally
       isCurrentUser: false,
@@ -233,13 +241,46 @@ async function fetchGlobalLeaderboardFromSupabase(type: LogType): Promise<Leader
   const now = new Date();
   const countCol = type === 'poop' ? 'poop_count' : 'piss_count';
 
+  // Fetch summaries (no FK join — Relationships not defined in Supabase)
   const { data: summaries } = await supabase
     .from('monthly_summaries')
-    .select(`user_id, ${countCol}, profiles!monthly_summaries_user_id_fkey(username)`)
+    .select(`user_id, ${countCol}`)
     .eq('month', now.getMonth() + 1)
     .eq('year', now.getFullYear())
     .order(countCol, { ascending: false })
     .limit(100);
+
+  // Fetch usernames from profiles
+  const summaryUserIds = (summaries ?? []).map((s: any) => s.user_id);
+  if (summaryUserIds.length) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .in('id', summaryUserIds);
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.username]));
+
+    const personalScore = await getPersonalScore(type);
+    const personalStreak = await calculateStreak(type);
+
+    const entries: LeaderboardEntry[] = [
+      ...(summaries ?? []).map((s: any) => ({
+        userId: s.user_id,
+        username: profileMap.get(s.user_id) ?? 'unknown',
+        score: countCol === 'poop_count' ? s.poop_count : s.piss_count,
+        streak: 0,
+        isCurrentUser: s.user_id === user.id,
+      })),
+      { userId: user.id, username: 'You', score: personalScore, streak: personalStreak, isCurrentUser: true },
+    ];
+
+    // Deduplicate self
+    const seen = new Set<string>();
+    return entries.filter(e => {
+      if (seen.has(e.userId)) return false;
+      seen.add(e.userId);
+      return true;
+    }).sort((a, b) => b.score - a.score);
+  }
 
   const personalScore = await getPersonalScore(type);
   const personalStreak = await calculateStreak(type);
@@ -247,7 +288,7 @@ async function fetchGlobalLeaderboardFromSupabase(type: LogType): Promise<Leader
   const entries: LeaderboardEntry[] = [
     ...(summaries ?? []).map((s: any) => ({
       userId: s.user_id,
-      username: s.profiles?.username ?? 'unknown',
+      username: 'unknown',
       score: countCol === 'poop_count' ? s.poop_count : s.piss_count,
       streak: 0,
       isCurrentUser: s.user_id === user.id,

@@ -24,6 +24,11 @@ interface BackupData {
   customTypes: any[];
 }
 
+const ALLOWED_SETTINGS_KEYS = [
+  'theme', 'syncDayOfMonth', 'userName', 'userEmail',
+  'periodRemindersEnabled', 'periodReminderHour', 'periodReminderMinute',
+];
+
 function cleanRow(row: any): any {
   const cleaned = { ...row };
   delete cleaned.id;
@@ -102,12 +107,16 @@ export async function importBackup(uri: string): Promise<{ imported: boolean; er
       return { imported: false, error: 'Unsupported backup version' };
     }
 
-    // Restore settings
+    // Restore settings (whitelist to prevent injection)
     if (backup.settings) {
+      const restoredKeys: string[] = [];
       for (const [key, val] of Object.entries(backup.settings)) {
-        storage.set(key, val);
+        if (ALLOWED_SETTINGS_KEYS.includes(key)) {
+          storage.set(key, val);
+          restoredKeys.push(key);
+        }
       }
-      logger.backup('Settings restored', { keys: Object.keys(backup.settings).length });
+      logger.backup('Settings restored', { keys: restoredKeys.length, skipped: Object.keys(backup.settings).length - restoredKeys.length });
     }
 
     // Restore poop logs

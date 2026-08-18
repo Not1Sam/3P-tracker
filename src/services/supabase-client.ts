@@ -38,11 +38,18 @@ export function isSupabaseConfigured(): boolean {
   return !!SUPABASE_URL;
 }
 
+const NO_OP = () => ({ data: null, error: new Error('Supabase not configured') });
+const NO_OP_CHAIN = new Proxy({} as any, {
+  get: () => NO_OP,
+});
+
 export const supabase = new Proxy({} as SupabaseClient<Database>, {
   get(_target, prop, _receiver) {
     if (_initFailed || !SUPABASE_URL) {
-      // Return no-op functions for common Supabase methods
-      return () => ({ data: null, error: new Error('Supabase not configured') });
+      // Return chainable no-op objects for .auth, .from(), etc.
+      if (prop === 'auth') return NO_OP_CHAIN;
+      if (prop === 'from') return NO_OP;
+      return NO_OP;
     }
     return (getSupabase() as any)[prop];
   },

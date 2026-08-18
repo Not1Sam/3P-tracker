@@ -102,9 +102,7 @@ export async function getCurrentUser(): Promise<User | null> {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
-      // Stale or invalid session — clear it
-      logger.auth('No valid session, clearing stale auth');
-      await supabase.auth.signOut();
+      logger.auth('No valid session found', { hasError: !!error });
       return null;
     }
     logger.auth(`User session found: ${user.id}`);

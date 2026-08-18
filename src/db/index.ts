@@ -17,6 +17,27 @@ function getDatabaseName(userId: string | null): string {
 }
 
 /**
+ * Create a mock Drizzle-like object for web that returns empty results.
+ * This prevents crashes when repository code tries to query the database.
+ */
+function createWebMock(): any {
+  const emptyResult = { rows: [], rowCount: 0 };
+  const chainable: any = new Proxy({}, {
+    get: () => () => chainable,
+  });
+  return new Proxy({}, {
+    get(_t, prop) {
+      if (prop === 'select') return () => chainable;
+      if (prop === 'insert') return () => ({ values: () => ({ returning: () => Promise.resolve(emptyResult) }) });
+      if (prop === 'update') return () => ({ set: () => ({ where: () => Promise.resolve(emptyResult) }) });
+      if (prop === 'delete') return () => ({ where: () => Promise.resolve(emptyResult) }) ;
+      if (prop === 'query') return {};
+      return chainable;
+    },
+  });
+}
+
+/**
  * Set the current user ID for database scoping.
  */
 export function setCurrentUserId(userId: string | null): void {
@@ -46,7 +67,8 @@ export async function getDatabase(): Promise<any> {
 async function openDatabase(): Promise<any> {
   if (Platform.OS === 'web') {
     logger.db('SQLite not available on web — running in preview mode');
-    return null;
+    database = createWebMock();
+    return database;
   }
 
   const SQLite = await import('expo-sqlite');

@@ -48,6 +48,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(u);
       setLoading(false);
       logger.auth('Auth state changed', { userId: u?.id ?? 'signedOut' });
+
+      // Re-trigger sync and leaderboard after login
+      if (u) {
+        logger.auth('User signed in — re-running background tasks');
+        import('@/services/sync-engine').then(m =>
+          m.runMonthlySync().catch(e => logger.syncError('Post-login sync failed', { error: e }))
+        );
+        import('@/services/leaderboard-service').then(m =>
+          m.syncLeaderboards().catch(e => logger.syncError('Post-login leaderboard sync failed', { error: e }))
+        );
+      }
     });
 
     return () => unsubscribe();

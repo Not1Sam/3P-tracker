@@ -10,7 +10,8 @@
     "updates": {
       "url": "https://pwa-3ptracker.bungus.fyi/ota/manifest",
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 30000
+      "fallbackToCacheTimeout": 30000,
+      "runtimeVersion": "1.0.0"
     },
     "ios": {
       "supportsTablet": true

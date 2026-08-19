@@ -87,8 +87,12 @@ async function scanBundleDir(platform: string): Promise<{ manifest: UpdateManife
     meta = {};
   }
 
-  // Find the entry JS bundle
-  const entryFile = Array.from(files.keys()).find(f => f.startsWith('_expo/static/js/web/entry') && f.endsWith('.js'));
+  // Find the entry bundle — check android .hbc first, then web .js fallback
+  const entryFile = Array.from(files.keys()).find(f =>
+    f.startsWith('_expo/static/js/android/entry') && f.endsWith('.hbc')
+  ) || Array.from(files.keys()).find(f =>
+    f.startsWith('_expo/static/js/web/entry') && f.endsWith('.js')
+  );
   if (!entryFile) return { manifest: null, files };
 
   const entryHash = await hashFile(files.get(entryFile)!);

@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
       - name: Build APK (cloud)
         run: |
           PROFILE="${{ github.event.inputs.build_profile || 'preview' }}"

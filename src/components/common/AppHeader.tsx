@@ -46,7 +46,7 @@ export function AppHeader() {
         </View>
 
         {/* Center title */}
-        <Text style={[styles.title, { color: colors.text }]}>haha poop app</Text>
+        <Text style={[styles.title, { color: colors.text }]}>3P Tracker</Text>
 
         {/* Right side */}
         <View style={styles.side}>

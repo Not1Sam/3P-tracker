@@ -46,7 +46,17 @@ jobs:
       - name: Download APK
         run: curl -L -o tracker.apk "$ARTIFACT_URL"
 
-      - name: Upload to GitHub Release
+      - name: Create GitHub Release if needed
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ "$TAG" = "" ] || [ "$TAG" = "refs/tags/" ]; then
+            TAG="manual"
+          fi
+          gh release create "$TAG" --generate-notes --verify-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK to GitHub Release
         run: |
           TAG="${{ github.ref_name }}"
           if [ "$TAG" = "" ] || [ "$TAG" = "refs/tags/" ]; then
